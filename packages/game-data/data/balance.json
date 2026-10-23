@@ -1,0 +1,247 @@
+{
+  "cultivation": {
+    "baseGainFx": 1000,
+    "spiritRootClampBp": [
+      5000,
+      20000
+    ],
+    "techniqueClampBp": [
+      5000,
+      15000
+    ],
+    "energyClampBp": [
+      6000,
+      16000
+    ],
+    "noTechniqueSpeedBp": 6000,
+    "injuryPenaltyBpPerPoint": 60,
+    "stateMinBp": 4000,
+    "seclusionBonusBp": 2000,
+    "daoMarkEnergyBp": 500
+  },
+  "breakthrough": {
+    "durationDays": 30,
+    "cooldownDays": 180,
+    "maxInjury": 29,
+    "minFoundation": {
+      "foundation": 30,
+      "golden_core": 45
+    },
+    "costStones": {
+      "foundation": 200,
+      "golden_core": 2000
+    },
+    "baseChanceBp": {
+      "foundation": 5000,
+      "golden_core": 3000
+    },
+    "insightBpPerPoint": 40,
+    "daoHeartBpPerPoint": 30,
+    "foundationBpPerPoint": 30,
+    "injuryBpPerPoint": 50,
+    "chanceClampBp": [
+      500,
+      9000
+    ],
+    "failure": {
+      "minorBp": 6000,
+      "majorBp": 3500,
+      "minor": {
+        "injury": 25,
+        "foundationLoss": 0,
+        "lifespanLossYears": 0,
+        "progressLossBp": 2000
+      },
+      "major": {
+        "injury": 45,
+        "foundationLoss": 8,
+        "lifespanLossYears": 5,
+        "progressLossBp": 0
+      },
+      "catastrophic": {
+        "injury": 70,
+        "foundationLoss": 15,
+        "lifespanLossYears": 20,
+        "progressLossBp": 0
+      }
+    }
+  },
+  "economy": {
+    "upkeepPerTerritory": 20,
+    "stipend": {
+      "leader": 30,
+      "elder": 15,
+      "disciple": 5
+    },
+    "shortfallStabilityLoss": 5,
+    "monthlyInjuryRecovery": 3,
+    "healInjuryRecovery": 12,
+    "healStonesPerMonth": 10
+  },
+  "ai": {
+    "reviewIntervalDays": 30,
+    "commitmentDays": 30,
+    "switchMargin": 150,
+    "jitter": 10,
+    "planCultivateMonths": 3,
+    "seekRadiusHops": 2,
+    "seekMinEnergyGainBp": 1500,
+    "scores": {
+      "breakthrough": 900,
+      "breakthroughRiskWeight": 2,
+      "healPerInjury": 8,
+      "healMinInjury": 10,
+      "gatherPoor": 600,
+      "gatherComfortable": 150,
+      "gatherGreedWeight": 2,
+      "cultivate": 400,
+      "cultivateAmbitionWeight": 2,
+      "seekEnergyDivisor": 20,
+      "seekLoyaltyWeight": 2,
+      "duty": 350,
+      "dutyLoyaltyWeight": 3,
+      "joinFaction": 300,
+      "joinLoyaltyWeight": 2,
+      "joinMinLoyalty": 50,
+      "confrontMinIntensity": 60,
+      "confrontRiskDivisor": 10
+    }
+  },
+  "dispute": {
+    "maxRelationToStart": -30,
+    "minPowerRatioBp": 8000,
+    "concedePowerRatioBp": 20000,
+    "maxSkirmishes": 3,
+    "winMarginBp": 3000,
+    "cooldownDays": 720
+  },
+  "worldgen": {
+    "locationCount": 14,
+    "extraEdges": 4,
+    "travelDays": [
+      3,
+      15
+    ],
+    "veinCount": 5,
+    "veinReserve": [
+      50000,
+      150000
+    ],
+    "veinYieldPerMonth": [
+      200,
+      600
+    ],
+    "spiritualEnergyBp": [
+      7000,
+      13000
+    ],
+    "veinEnergyBonusBp": 2000,
+    "resourceStock": [
+      100,
+      600
+    ],
+    "resourceRegenPerMonth": [
+      5,
+      30
+    ],
+    "minSeatDistance": 2,
+    "npcCount": 20,
+    "rivalRelation": [
+      -40,
+      -25
+    ],
+    "otherRelation": [
+      -10,
+      20
+    ],
+    "factionTreasury": [
+      3000,
+      8000
+    ],
+    "player": {
+      "ageYears": 16,
+      "spiritRootBp": [
+        8000,
+        12000
+      ],
+      "spiritStones": 50
+    },
+    "terrain": {
+      "width": 64,
+      "height": 48,
+      "noiseCellSize": 160,
+      "octaves": 4,
+      "noiseAmplitude": 1000,
+      "landTargetBp": 6200,
+      "edgeFalloff": 1000,
+      "seaLevel": 0,
+      "ridgeCount": [
+        2,
+        4
+      ],
+      "ridgeLength": [
+        8,
+        16
+      ],
+      "ridgeHeight": 700,
+      "ridgeFalloffPerStep": 90,
+      "rainCellSize": 128,
+      "riverFlowThreshold": 80,
+      "moistureCellSize": 192,
+      "moistureWaterBonus": 350,
+      "moistureWaterFalloff": 70,
+      "elevationBandsBp": [4500, 7800, 9200],
+      "moistureBandsBp": [2500, 6500],
+      "biomeMatrix": [
+        ["hoang_nguyen", "thao_nguyen", "dam_lay"],
+        ["doi_da", "rung", "rung_ram"],
+        ["cao_nguyen", "nui_rung", "van_son"],
+        ["nui_da", "nui_tuyet", "nui_tuyet"]
+      ],
+      "waterBiomeId": "bien",
+      "forbiddenBiomeId": "tu_khi_dam",
+      "forbiddenOnBiomes": ["dam_lay", "rung_ram"],
+      "forbiddenNoiseCellSize": 96,
+      "forbiddenThreshold": 43000,
+      "qiElevationPoints": 1000,
+      "qiFlowWeight": 3,
+      "qiFlowCap": 600,
+      "qiMountainBonus": 150,
+      "qiNoiseAmplitude": 200,
+      "qiNoiseCellSize": 64
+    }
+  },
+  "actions": {
+    "cultivateDays": [
+      30,
+      360
+    ],
+    "seclusionDays": [
+      360,
+      3600
+    ],
+    "seclusionEarlyExitLossBp": 1000,
+    "gatherDays": 30,
+    "gatherBase": 20,
+    "gatherPerPower": 3,
+    "healDays": [
+      30,
+      180
+    ],
+    "dutyDays": 30,
+    "dutyPay": 10,
+    "dutyRelation": 3,
+    "joinDays": 7,
+    "joinMaxMembers": 8,
+    "leaveDays": 1,
+    "duelLoserInjury": [
+      15,
+      35
+    ],
+    "duelWinnerInjury": [
+      0,
+      10
+    ],
+    "duelInjuryCap": 95
+  }
+}

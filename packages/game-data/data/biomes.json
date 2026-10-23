@@ -1,0 +1,17 @@
+{
+  "biomes": [
+    { "id": "bien", "name": "Biển", "travelCost": 0, "energyModBp": 0, "resourceModBp": 10000, "tags": ["water"], "color": "#3b6e8f" },
+    { "id": "hoang_nguyen", "name": "Hoang Nguyên", "travelCost": 3, "energyModBp": -1000, "resourceModBp": 7000, "tags": [], "color": "#c9b27c" },
+    { "id": "thao_nguyen", "name": "Thảo Nguyên", "travelCost": 2, "energyModBp": 0, "resourceModBp": 9000, "tags": [], "color": "#a7b86a" },
+    { "id": "dam_lay", "name": "Đầm Lầy", "travelCost": 7, "energyModBp": 500, "resourceModBp": 11000, "tags": [], "color": "#6f8a5a" },
+    { "id": "doi_da", "name": "Đồi Đá", "travelCost": 4, "energyModBp": 0, "resourceModBp": 10000, "tags": [], "color": "#a89a7a" },
+    { "id": "rung", "name": "Rừng", "travelCost": 4, "energyModBp": 500, "resourceModBp": 12000, "tags": [], "color": "#5e8c4f" },
+    { "id": "rung_ram", "name": "Rừng Rậm", "travelCost": 6, "energyModBp": 1000, "resourceModBp": 14000, "tags": [], "color": "#3f6b3a" },
+    { "id": "cao_nguyen", "name": "Cao Nguyên", "travelCost": 5, "energyModBp": 500, "resourceModBp": 9000, "tags": ["mountain"], "color": "#9c8a6a" },
+    { "id": "nui_rung", "name": "Núi Rừng", "travelCost": 8, "energyModBp": 1500, "resourceModBp": 13000, "tags": ["mountain"], "color": "#5a6e4a" },
+    { "id": "van_son", "name": "Vân Sơn", "travelCost": 9, "energyModBp": 2000, "resourceModBp": 12000, "tags": ["mountain"], "color": "#7d8f8a" },
+    { "id": "nui_da", "name": "Núi Đá", "travelCost": 10, "energyModBp": 1500, "resourceModBp": 8000, "tags": ["mountain"], "color": "#8a8278" },
+    { "id": "nui_tuyet", "name": "Núi Tuyết", "travelCost": 14, "energyModBp": 2500, "resourceModBp": 6000, "tags": ["mountain"], "color": "#e8ecef" },
+    { "id": "tu_khi_dam", "name": "Tử Khí Đầm", "travelCost": 18, "energyModBp": -2000, "resourceModBp": 15000, "tags": ["forbidden"], "color": "#4b3b5c" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "techniques": [
+    { "id": "dan_khi_quyet", "name": "Dẫn Khí Quyết", "minRealm": "qi", "minSpiritRootBp": 0, "speedBp": 8000, "stonesPerMonth": 0, "breakthroughModBp": 0, "factionTemplateId": null },
+    { "id": "thanh_van_quyet", "name": "Thanh Vân Quyết", "minRealm": "qi", "minSpiritRootBp": 7000, "speedBp": 11000, "stonesPerMonth": 5, "breakthroughModBp": 300, "factionTemplateId": "thanh_van" },
+    { "id": "huyet_sat_cong", "name": "Huyết Sát Công", "minRealm": "qi", "minSpiritRootBp": 6000, "speedBp": 12500, "stonesPerMonth": 8, "breakthroughModBp": -400, "factionTemplateId": "huyet_sat" },
+    { "id": "van_phap_tam_kinh", "name": "Vạn Pháp Tâm Kinh", "minRealm": "qi", "minSpiritRootBp": 8000, "speedBp": 10000, "stonesPerMonth": 4, "breakthroughModBp": 600, "factionTemplateId": "van_phap" },
+    { "id": "lac_ha_quyet", "name": "Lạc Hà Quyết", "minRealm": "qi", "minSpiritRootBp": 7000, "speedBp": 10500, "stonesPerMonth": 5, "breakthroughModBp": 400, "factionTemplateId": "lac_ha" },
+    { "id": "thiet_kiem_quyet", "name": "Thiết Kiếm Quyết", "minRealm": "qi", "minSpiritRootBp": 6500, "speedBp": 11500, "stonesPerMonth": 6, "breakthroughModBp": 0, "factionTemplateId": "thiet_kiem" },
+    { "id": "u_minh_cong", "name": "U Minh Công", "minRealm": "qi", "minSpiritRootBp": 6000, "speedBp": 12000, "stonesPerMonth": 7, "breakthroughModBp": -300, "factionTemplateId": "u_minh" },
+    { "id": "tan_tu_tam_phap", "name": "Tán Tu Tâm Pháp", "minRealm": "qi", "minSpiritRootBp": 5000, "speedBp": 9000, "stonesPerMonth": 2, "breakthroughModBp": 100, "factionTemplateId": null }
+  ]
+}

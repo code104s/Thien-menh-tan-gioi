@@ -1,0 +1,13 @@
+{
+  "realms": [
+    { "id": "qi", "name": "Luyện Khí", "daysPerStage": 1800, "lifespanYears": 100, "power": [1, 2, 3, 4] },
+    { "id": "foundation", "name": "Trúc Cơ", "daysPerStage": 3600, "lifespanYears": 180, "power": [10, 13, 16, 20] },
+    { "id": "golden_core", "name": "Kim Đan", "daysPerStage": 7200, "lifespanYears": 400, "power": [50, 60, 70, 85] }
+  ],
+  "stages": [
+    { "id": "early", "name": "Sơ kỳ" },
+    { "id": "middle", "name": "Trung kỳ" },
+    { "id": "late", "name": "Hậu kỳ" },
+    { "id": "perfect", "name": "Viên mãn" }
+  ]
+}

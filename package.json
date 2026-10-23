@@ -1,0 +1,26 @@
+{
+  "name": "thien-menh-tan-gioi",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.12.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json && tsc -p apps/web/tsconfig.json",
+    "test": "vitest run",
+    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "sim": "tsx tools/headless/src/cli.ts",
+    "dev": "pnpm --filter @tmtg/web dev",
+    "build": "pnpm --filter @tmtg/web build"
+  },
+  "devDependencies": {
+    "eslint": "10.13.0",
+    "fast-check": "4.10.2",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
+  }
+}

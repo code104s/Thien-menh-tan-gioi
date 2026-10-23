@@ -1,0 +1,12 @@
+[
+  { "commandId": "fx-1", "seq": 1, "issuedAtDay": 0, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 90 } },
+  { "commandId": "fx-2", "seq": 2, "issuedAtDay": 30, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 30 } },
+  { "commandId": "fx-3", "seq": 3, "issuedAtDay": 120, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 360 } },
+  { "commandId": "fx-4", "seq": 4, "issuedAtDay": 300, "actorId": "chr_0000", "payload": { "type": "CANCEL_ACTION", "actionId": "act_000002" } },
+  { "commandId": "fx-5", "seq": 5, "issuedAtDay": 1800, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 20 } },
+  { "commandId": "fx-6", "seq": 6, "issuedAtDay": 1800, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "travel", "durationDays": 5 } },
+  { "commandId": "fx-7", "seq": 7, "issuedAtDay": 2000, "actorId": "chr_0000", "payload": { "type": "RESOLVE_CHOICE", "choiceId": "chc_0001", "optionId": "a" } },
+  { "commandId": "fx-8", "seq": 8, "issuedAtDay": 2400, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 700 } },
+  { "commandId": "fx-8-dup", "seq": 8, "issuedAtDay": 2401, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 700 } },
+  { "commandId": "fx-9", "seq": 9, "issuedAtDay": 4000, "actorId": "chr_0000", "payload": { "type": "START_ACTION", "actionType": "cultivate", "durationDays": 3000 } }
+]

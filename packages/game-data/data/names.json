@@ -1,0 +1,22 @@
+{
+  "surnames": [
+    "Lý", "Trương", "Vương", "Triệu", "Hàn", "Tiêu", "Mộ Dung", "Lâm", "Diệp", "Tần",
+    "Thẩm", "Bạch", "Cố", "Tô", "Liễu", "Phương", "Lục", "Đường", "Âu Dương", "Nam Cung"
+  ],
+  "givenNames": [
+    "Thanh Phong", "Mặc", "Vân", "Huyền", "Tử Yên", "Hạo", "Thiên Hành", "Nguyệt", "Linh", "Trường Sinh",
+    "Kiếm Tâm", "Uyển Nhi", "Bất Phàm", "Thiếu Khanh", "Tuyết", "Minh", "Vô Kỵ", "Hàn Sương", "Dật", "Lạc",
+    "Chi", "Viễn", "Tĩnh", "Phi Yến", "Thần", "Khiêm", "Ngọc Dao", "Trác", "Lăng", "Hiên"
+  ],
+  "placePrefixes": [
+    "Hắc Phong", "Linh Tuyền", "Thạch", "Mê Vụ", "Thanh Khê", "Lạc Nhật", "Bích Thủy", "Cửu Long",
+    "Hàn Băng", "Tử Trúc", "Vân Mộng", "Huyền Thiết", "Kim Sa", "Ngọc Hư", "Phong Lôi", "Thiên Trì",
+    "Xích Diễm", "Bạch Lộc", "Vọng Nguyệt", "Thương Lan"
+  ],
+  "placeSuffixes": {
+    "wild": ["Lĩnh", "Cốc", "Lâm", "Sơn", "Nguyên", "Hồ"],
+    "town": ["Trấn", "Thành", "Tập"],
+    "secret_realm": ["Bí Cảnh", "Động Thiên"]
+  },
+  "veinSuffix": "Linh Mạch"
+}

@@ -1,0 +1,10 @@
+{
+  "factions": [
+    { "id": "thanh_van", "name": "Thanh Vân Tông", "seatName": "Thanh Vân Phong", "techniqueId": "thanh_van_quyet", "personalityBias": { "ambition": 0, "greed": -10, "loyalty": 15, "riskTolerance": -5 } },
+    { "id": "huyet_sat", "name": "Huyết Sát Môn", "seatName": "Huyết Sát Cốc", "techniqueId": "huyet_sat_cong", "personalityBias": { "ambition": 15, "greed": 15, "loyalty": -5, "riskTolerance": 15 } },
+    { "id": "van_phap", "name": "Vạn Pháp Các", "seatName": "Vạn Pháp Lâu", "techniqueId": "van_phap_tam_kinh", "personalityBias": { "ambition": 5, "greed": 0, "loyalty": 5, "riskTolerance": -10 } },
+    { "id": "lac_ha", "name": "Lạc Hà Cung", "seatName": "Lạc Hà Đài", "techniqueId": "lac_ha_quyet", "personalityBias": { "ambition": 0, "greed": 5, "loyalty": 10, "riskTolerance": 0 } },
+    { "id": "thiet_kiem", "name": "Thiết Kiếm Minh", "seatName": "Thiết Kiếm Bảo", "techniqueId": "thiet_kiem_quyet", "personalityBias": { "ambition": 10, "greed": 5, "loyalty": 5, "riskTolerance": 10 } },
+    { "id": "u_minh", "name": "U Minh Giáo", "seatName": "U Minh Điện", "techniqueId": "u_minh_cong", "personalityBias": { "ambition": 15, "greed": 10, "loyalty": -10, "riskTolerance": 10 } }
+  ]
+}
