@@ -10,7 +10,7 @@ import { fbm, noiseSalt } from './noise.ts';
 export const FLOW_MAX = 0xffff;
 
 /** Min-heap theo (key, cell); hòa key thì ô có chỉ số nhỏ ra trước → tất định. */
-class CellHeap {
+export class CellHeap {
   private readonly keys: number[] = [];
   private readonly cells: number[] = [];
 

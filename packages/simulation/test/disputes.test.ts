@@ -37,6 +37,15 @@ function equalize(s: WorldState) {
   for (const c of Object.values(s.characters)) if (c.factionId === null) c.factionRank = null;
 }
 
+/** Linh mạch vô chủ kề lãnh địa bị chiếm ngay thay vì tranh chấp (docs/08); giao cho C để mục tiêu của A là linh mạch của B. */
+function withoutUnownedVeins(s: WorldState): WorldState {
+  for (const v of Object.values(s.spiritVeins)) {
+    const l = s.locations[v.locationId]!;
+    if (l.ownerFactionId === null) l.ownerFactionId = C;
+  }
+  return s;
+}
+
 const types = (events: WorldEvent[]) => events.map((e) => e.type);
 
 describe('chiến lược quý', () => {
@@ -148,7 +157,7 @@ describe('tranh chấp linh mạch', () => {
 
 describe('người chơi trong tranh chấp', () => {
   it('thành viên không bế quan nhận lựa chọn tham chiến; đang bế quan thì mặc định vắng mặt', () => {
-    const s = rivals('dsp-p', { kind: 'join_faction', factionIndex: 1 });
+    const s = withoutUnownedVeins(rivals('dsp-p', { kind: 'join_faction', factionIndex: 1 }));
     equalize(s);
     s.characters[PLAYER_ID]!.factionId = B;
     s.characters[PLAYER_ID]!.factionRank = 'disciple';
@@ -159,7 +168,7 @@ describe('người chơi trong tranh chấp', () => {
     expect(s.pendingChoices).toHaveLength(1);
     expect(s.pendingChoices[0]).toMatchObject({ kind: 'dispute_participation', eventId: started.id, defaultOptionId: 'avoid' });
 
-    const t = rivals('dsp-p', { kind: 'join_faction', factionIndex: 1 });
+    const t = withoutUnownedVeins(rivals('dsp-p', { kind: 'join_faction', factionIndex: 1 }));
     equalize(t);
     t.characters[PLAYER_ID]!.factionId = B;
     t.characters[PLAYER_ID]!.factionRank = 'disciple';

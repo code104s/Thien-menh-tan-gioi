@@ -11,7 +11,7 @@ import namesJson from '../data/names.json' with { type: 'json' };
 import realmsJson from '../data/realms.json' with { type: 'json' };
 import techniquesJson from '../data/techniques.json' with { type: 'json' };
 
-export const CONTENT_VERSION = '0.3.0';
+export const CONTENT_VERSION = '0.4.0';
 
 const int = z.int();
 const nonNeg = z.int().min(0);
@@ -199,6 +199,11 @@ export const balanceSchema = z.object({
       qiMountainBonus: nonNeg,
       qiNoiseAmplitude: nonNeg,
       qiNoiseCellSize: z.int().positive(),
+      /** W4: khoảng cách hex tối thiểu giữa các địa điểm / giữa các linh mạch (nới dần nếu thiếu chỗ). */
+      minSiteSpacing: z.int().positive(),
+      minVeinSpacing: nonNeg,
+      /** travelDays = clamp(⌊chi phí đường / travelCostPerDay⌋, travelDays). */
+      travelCostPerDay: z.int().positive(),
     }),
   }),
 });

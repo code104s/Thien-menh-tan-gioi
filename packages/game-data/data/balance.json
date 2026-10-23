@@ -208,7 +208,10 @@
       "qiFlowCap": 600,
       "qiMountainBonus": 150,
       "qiNoiseAmplitude": 200,
-      "qiNoiseCellSize": 64
+      "qiNoiseCellSize": 64,
+      "minSiteSpacing": 8,
+      "minVeinSpacing": 10,
+      "travelCostPerDay": 5
     }
   },
   "actions": {

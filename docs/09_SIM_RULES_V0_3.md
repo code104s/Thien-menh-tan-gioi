@@ -159,7 +159,7 @@ Khi một nhân vật Kim Đan chết hoặc đột phá Kim Đan tại địa �
 
 ## 14. Sinh thế giới
 - 14 địa điểm: cây khung ngẫu nhiên + 4 cạnh bổ sung, `travelDays` 3–15; 3 trụ sở tông môn cách nhau ≥ 2 cạnh; 5 linh mạch.
-  - **ADR-16 (đã duyệt, chưa triển khai):** đồ thị sẽ được suy ra từ địa hình hex. Cây khung là MST của các vùng kề nhau, `travelDays` lấy từ chi phí đường đi, trụ sở và linh mạch xếp theo địa khí. Quy tắc chi tiết ở `08` › "Quy tắc worldgen v2". Số lượng 14/3/5/1/2 không đổi.
+  - **ADR-16 (W4 đã triển khai 2026-10-23):** đồ thị được suy ra từ địa hình hex; mô tả "cây khung ngẫu nhiên, `travelDays` 3–15" ở trên không còn đúng. Cây khung là MST của các vùng kề nhau, `travelDays` lấy từ chi phí đường đi, trụ sở và linh mạch xếp theo địa khí. Quy tắc chi tiết ở `08` › "Quy tắc worldgen v2". Số lượng 14/3/5/1/2 không đổi.
 - 3 tông môn: mỗi tông 1 tông chủ (Trúc Cơ hậu kỳ trở lên; đúng một tông có Kim Đan sơ kỳ), 1–2 trưởng lão, 3–4 đệ tử; còn lại là tán tu → tổng **20 NPC**.
 - Người chơi `chr_0000`: 16 tuổi, Luyện Khí sơ kỳ, linh căn 8000–12000, 50 linh thạch, chọn xuất thân: gia nhập 1 trong 3 tông môn / tán tu / tìm tài nguyên (bắt đầu ở địa điểm hoang dã giàu tài nguyên).
 - Tên Hán-Việt sinh từ `names.json` bằng luồng `worldgen`.

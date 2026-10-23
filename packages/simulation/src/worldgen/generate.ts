@@ -1,19 +1,22 @@
 /**
- * Sinh thế giới từ seed (docs/09 mục 14). Mọi lựa chọn ngẫu nhiên dùng luồng `worldgen`;
- * thuật toán hữu hạn bước, không có vòng "thử lại tới khi đúng".
+ * Sinh thế giới từ seed (docs/09 mục 14, docs/08 › Quy tắc worldgen v2). Không gian lấy từ địa hình hex (ADR-16);
+ * mọi lựa chọn ngẫu nhiên còn lại dùng luồng `worldgen`. Thuật toán hữu hạn bước, không có vòng "thử lại tới khi đúng".
  */
 import { gameData as defaultGameData, type FactionTemplate, type GameData } from '@tmtg/game-data';
 import { DAYS_PER_YEAR } from '../core/calendar.ts';
 import { createEvent } from '../core/events.ts';
 import { characterId, compareIds, factionId, locationId, sortedKeys, veinId } from '../core/ids.ts';
-import { clamp } from '../core/math.ts';
+import { clamp, mulBp } from '../core/math.ts';
 import { getStream, type RngStream } from '../core/rng.ts';
 import { baseLifespanDays, stageThresholdFx } from '../rules/realm.ts';
 import { hopDistances } from '../world/graph.ts';
+import { biomeHasTag } from './terrain/biome.ts';
+import { createHexGrid, hexDistance, neighborsOf } from './terrain/hexGrid.ts';
+import { generateTerrainWorld } from './terrain/index.ts';
 import {
   BURN_SINKS, MINT_SOURCES,
   type BurnSink, type Cultivator, type EntityId, type FactionRank, type Ledger, type Location,
-  type LocationKind, type MintSource, type Personality, type Realm, type SpiritVein, type Stage,
+  type LocationEdge, type LocationKind, type MintSource, type Personality, type Realm, type SpiritVein, type Stage,
   type WorldEvent, type WorldState,
 } from '../types.ts';
 
@@ -38,7 +41,6 @@ export const PLAYER_ID = characterId(0);
 const FACTION_COUNT = 3;
 const TOWN_COUNT = 2;
 const SECRET_REALM_COUNT = 1;
-const ENERGY_MAX_BP = 16_000;
 
 type Range = readonly [number, number];
 const roll = (rng: RngStream, [lo, hi]: Range) => rng.nextRange(lo, hi);
@@ -77,31 +79,29 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
   };
   const rng = getStream(state.rng, params.seed, 'worldgen');
 
-  // 1. Đồ thị địa điểm: cây đệ quy ngẫu nhiên (luôn liên thông) + cạnh bổ sung.
-  const n = cfg.locationCount;
+  // 1. Địa hình (ADR-16): địa điểm, cạnh và travelDays suy ra từ lưới hex; luồng RNG địa hình là cục bộ.
+  const terrain = generateTerrainWorld(params.seed, data);
+  const { biome: cellBiome, qi } = terrain.model;
+  const grid = createHexGrid(terrain.model.width, terrain.model.height);
+  const n = terrain.sites.length;
   const locIds = Array.from({ length: n }, (_, i) => locationId(i + 1));
-  const adjacency = new Map<EntityId, Map<EntityId, number>>(locIds.map((id) => [id, new Map()]));
-  const link = (a: EntityId, b: EntityId) => {
-    const days = roll(rng, cfg.travelDays);
-    adjacency.get(a)!.set(b, days);
-    adjacency.get(b)!.set(a, days);
-  };
-  for (let i = 1; i < n; i++) link(locIds[i]!, locIds[rng.nextInt(i)]!);
-  const missingPairs: [EntityId, EntityId][] = [];
-  for (let i = 0; i < n; i++) {
-    for (let j = i + 1; j < n; j++) {
-      if (!adjacency.get(locIds[i]!)!.has(locIds[j]!)) missingPairs.push([locIds[i]!, locIds[j]!]);
-    }
+  const anchorOf = new Map<EntityId, number>(locIds.map((id, i) => [id, terrain.sites[i]!]));
+  const anchor = (id: EntityId): number => anchorOf.get(id)!;
+  const biomeAt = (id: EntityId) => data.biomes[cellBiome[anchor(id)]!]!;
+  const adjacency = new Map<EntityId, LocationEdge[]>(locIds.map((id) => [id, []]));
+  for (const e of terrain.edges) {
+    adjacency.get(locIds[e.a]!)!.push({ to: locIds[e.b]!, travelDays: e.travelDays });
+    adjacency.get(locIds[e.b]!)!.push({ to: locIds[e.a]!, travelDays: e.travelDays });
   }
-  for (const [a, b] of rng.shuffle(missingPairs).slice(0, cfg.extraEdges)) link(a, b);
+  const [energyMin, energyMax] = data.balance.cultivation.energyClampBp;
 
   for (const id of locIds) {
     state.locations[id] = {
       id,
       name: '',
       kind: 'wild',
-      edges: [...adjacency.get(id)!].map(([to, travelDays]) => ({ to, travelDays })).sort((x, y) => compareIds(x.to, y.to)),
-      spiritualEnergyBp: roll(rng, cfg.spiritualEnergyBp),
+      edges: adjacency.get(id)!.sort((x, y) => compareIds(x.to, y.to)),
+      spiritualEnergyBp: clamp(roll(rng, cfg.spiritualEnergyBp) + biomeAt(id).energyModBp, energyMin, energyMax),
       resourceStock: 0,
       resourceRegenPerMonth: 0,
       resourceCap: 0,
@@ -111,9 +111,17 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
     };
   }
   const loc = (id: EntityId): Location => state.locations[id]!;
+  const byQi = (a: EntityId, b: EntityId) => qi[anchor(b)]! - qi[anchor(a)]! || compareIds(a, b);
 
-  // 2. Trụ sở: tham lam theo thứ tự xáo trộn, cách nhau ≥ minSeatDistance; nới điều kiện nếu không đủ.
-  const order = rng.shuffle(locIds);
+  // 2. Trụ sở: điểm = địa khí ô neo + thưởng nếu ô neo hoặc ô kề có núi; cách nhau ≥ minSeatDistance cạnh,
+  //    nới điều kiện nếu không đủ.
+  const nearMountain = (cell: number): boolean => {
+    const around: number[] = [];
+    const count = neighborsOf(grid, cell, around);
+    return [cell, ...around.slice(0, count)].some((c) => biomeHasTag(data, cellBiome[c]!, 'mountain'));
+  };
+  const seatScore = (id: EntityId) => qi[anchor(id)]! + (nearMountain(anchor(id)) ? cfg.terrain.qiMountainBonus : 0);
+  const order = [...locIds].sort((a, b) => seatScore(b) - seatScore(a) || compareIds(a, b));
   const seats: EntityId[] = [];
   for (const minDist of [cfg.minSeatDistance, 1]) {
     for (const candidate of order) {
@@ -170,13 +178,27 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
     const free = loc(seats[i]!).edges.map((e) => loc(e.to)).filter((l) => l.kind === 'wild' && l.ownerFactionId === null);
     if (free.length > 0) rng.pick(free).ownerFactionId = facIds[i]!;
   }
-  const spareVeinSpots = rng.shuffle(locIds.filter((id) => !veinLocations.includes(id) && loc(id).kind === 'wild'));
-  veinLocations.push(...spareVeinSpots.slice(0, Math.max(0, cfg.veinCount - veinLocations.length)));
+  // Linh mạch còn lại: nút hoang dã địa khí cao nhất, cách các linh mạch khác ≥ minVeinSpacing ô (nới nếu thiếu).
+  const spare = locIds.filter((id) => !veinLocations.includes(id) && loc(id).kind === 'wild').sort(byQi);
+  for (const spacing of [cfg.terrain.minVeinSpacing, 0]) {
+    for (const id of spare) {
+      if (veinLocations.length >= cfg.veinCount) break;
+      if (veinLocations.includes(id)) continue;
+      if (veinLocations.every((v) => hexDistance(grid, anchor(v), anchor(id)) >= spacing)) veinLocations.push(id);
+    }
+  }
 
-  // 5. Loại địa điểm còn lại: thị trấn và bí cảnh lấy từ nút không có linh mạch, không có chủ.
-  const plain = rng.shuffle(locIds.filter((id) => !veinLocations.includes(id) && loc(id).kind === 'wild' && loc(id).ownerFactionId === null));
-  plain.slice(0, TOWN_COUNT).forEach((id) => { loc(id).kind = 'town'; });
-  plain.slice(TOWN_COUNT, TOWN_COUNT + SECRET_REALM_COUNT).forEach((id) => { loc(id).kind = 'secret_realm'; });
+  // 5. Bí cảnh: nút trống xa các trụ sở nhất (tổng khoảng cách hex); thị trấn: nút trống dễ đi nhất.
+  const isPlain = (id: EntityId) => !veinLocations.includes(id) && loc(id).kind === 'wild' && loc(id).ownerFactionId === null;
+  const seatDistance = (id: EntityId) => seats.reduce((sum, s) => sum + hexDistance(grid, anchor(s), anchor(id)), 0);
+  locIds.filter(isPlain)
+    .sort((a, b) => seatDistance(b) - seatDistance(a) || compareIds(a, b))
+    .slice(0, SECRET_REALM_COUNT)
+    .forEach((id) => { loc(id).kind = 'secret_realm'; });
+  locIds.filter(isPlain)
+    .sort((a, b) => biomeAt(a).travelCost - biomeAt(b).travelCost || compareIds(a, b))
+    .slice(0, TOWN_COUNT)
+    .forEach((id) => { loc(id).kind = 'town'; });
 
   // 6. Tên, tài nguyên, linh mạch.
   const prefixes = rng.shuffle(data.names.placePrefixes);
@@ -188,24 +210,29 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
       l.name = `${prefixes[prefixIndex++ % prefixes.length]!} ${rng.pick(suffixes)}`;
     }
     if (l.kind === 'wild' || l.kind === 'secret_realm') {
-      l.resourceStock = roll(rng, cfg.resourceStock);
+      l.resourceStock = mulBp(roll(rng, cfg.resourceStock), biomeAt(id).resourceModBp);
       l.resourceRegenPerMonth = roll(rng, cfg.resourceRegenPerMonth);
       l.resourceCap = l.resourceStock * 3;
     }
   }
+  // Trữ lượng và sản lượng roll như cũ, rồi xếp hạng theo địa khí: mạch mạnh nhất ở nơi địa khí cao nhất.
+  const reserves = veinLocations.map(() => roll(rng, cfg.veinReserve)).sort((a, b) => b - a);
+  const yields = veinLocations.map(() => roll(rng, cfg.veinYieldPerMonth)).sort((a, b) => b - a);
+  const qiRank = new Map(veinLocations.slice().sort(byQi).map((id, rank) => [id, rank]));
   veinLocations.slice().sort(compareIds).forEach((locId, i) => {
     const id = veinId(i + 1);
     const l = loc(locId);
+    const rank = qiRank.get(locId)!;
     const vein: SpiritVein = {
       id,
       locationId: locId,
       name: `${l.name} ${data.names.veinSuffix}`,
-      reserve: roll(rng, cfg.veinReserve),
-      yieldPerMonth: roll(rng, cfg.veinYieldPerMonth),
+      reserve: reserves[rank]!,
+      yieldPerMonth: yields[rank]!,
     };
     state.spiritVeins[id] = vein;
     l.veinId = id;
-    l.spiritualEnergyBp = clamp(l.spiritualEnergyBp + cfg.veinEnergyBonusBp, 0, ENERGY_MAX_BP);
+    l.spiritualEnergyBp = clamp(l.spiritualEnergyBp + cfg.veinEnergyBonusBp, energyMin, energyMax);
   });
 
   // 7. Nhân vật.

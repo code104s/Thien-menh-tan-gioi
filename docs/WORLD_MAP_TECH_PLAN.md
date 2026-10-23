@@ -1,6 +1,6 @@
 # WORLD_MAP_TECH_PLAN — Kế hoạch kỹ thuật bản đồ thế giới
 
-Phiên bản 0.2 · 2026-10-24 · Trạng thái: **kiến trúc §2 đã duyệt** (ADR-16). W0 xong: ADR-16 nằm trong `07`, hợp đồng nằm trong `08` › "Bổ sung ADR-16". Chưa có dòng code nào được thêm vào repo. Khi tài liệu này mâu thuẫn với 07/08, ưu tiên 07/08.
+Phiên bản 0.2 · 2026-10-24 · Trạng thái: **kiến trúc §2 đã duyệt** (ADR-16). W0–W4 xong (2026-10-23): đồ thị địa điểm suy ra từ địa hình; schema v2, protocol `TERRAIN` và renderer chưa làm (W5–W7). Khi tài liệu này mâu thuẫn với 07/08, ưu tiên 07/08.
 Dữ liệu nền: `ASSET_RESEARCH.md`. Theo `CLAUDE.md`, mọi thay đổi kiến trúc và cân bằng nền tảng cần được duyệt trước.
 
 ## 1. Hiện trạng và ràng buộc
@@ -143,7 +143,7 @@ Bất biến mới (bổ sung vào `checkInvariants` khi có `TerrainModel`): m�
 | W1 ✅ | `hexGrid` + `noise` số nguyên (2026-10-24, 17 test; chưa nối vào `generateWorld`) | W0 | S | `worldgen/terrain/hexGrid.ts`, `noise.ts` | Vector cố định cho `hash2`; láng giềng biên; lint không báo API bị cấm |
 | W2 ✅ | Độ cao + long mạch + priority-flood + sông + độ ẩm (2026-10-24; 100 seed: đất 62–66 %, khối đất lớn nhất ≥ 97,8 %, 93–217 ô sông, ~1,6 ms/seed) | W1 | M | `elevation.ts`, `hydrology.ts`, `climate.ts` | 100 seed: không còn trũng nội địa sau khi lấp; mọi ô đất chảy được ra biển; tỉ lệ đất 55–75 %; có ≥ 1 sông |
 | W3 ✅ | Biome + `biomes.json` + `qi` (2026-10-24; 100 seed: núi 22 % đất, vùng cấm 0,3–13 % và có ở mọi seed; top-30 qi ≈ 66 % núi / 62 % sông; ~2,7 ms/seed cho W2+W3) | W2 | S | `biome.ts`, `qi.ts`, `game-data/data/biomes.json` | Zod validate; mọi ô có biome hợp lệ |
-| W4 | Địa điểm + vùng + đồ thị + nối vào `generateWorld` | W3 | L | `sites.ts`, `regions.ts`, `graph.ts`, `generate.ts` | 100 seed: đúng 14 địa điểm, đồ thị liên thông, `travelDays` ∈ [3,15], 5 linh mạch, ≥ 8/10 seed có tranh chấp trong 10 năm (giữ nghiệm thu 3.4) |
+| W4 ✅ | Địa điểm + vùng + đồ thị + nối vào `generateWorld` (2026-10-23; 100 seed: không seed nào phải nới khoảng cách, `travelDays` trung bình 8,5, 17 cạnh/seed, ~10 ms/seed cho toàn pipeline; tranh chấp trong 10 năm: 103/200 seed so với 104/200 của đồ thị cũ, **chưa đạt 8/10**, xem §9) | W3 | L | `sites.ts`, `regions.ts`, `graph.ts`, `index.ts`, `types.ts`, `generate.ts` | 100 seed: đúng 14 địa điểm, đồ thị liên thông, `travelDays` ∈ [3,15], 5 linh mạch, ≥ 8/10 seed có tranh chấp trong 10 năm (giữ nghiệm thu 3.4) |
 | W5 | Schema v2 + migration + bất biến mới + baseline bench mới | W4 | M | `shared/src/schema.ts`, `save.ts`, `core/invariants.ts`, `bench-results/` | Save v1 vẫn tải được; round-trip v2 giữ digest; `pnpm sim bench` không chậm quá 5 % |
 | W6 | Protocol `TERRAIN` + `TerrainRenderer` + hit-test + bỏ `layout.ts` | W4 | L | `worker/sim.worker.ts`, `shared/src/protocol.ts`, `components/map/*` | Bake nền ≤ 30 ms, khung ≤ 4 ms (route `/bench`); bấm địa điểm chọn đúng; lãnh thổ đổi màu sau khi chuyển quyền |
 | W7 | (UI, có thể làm song song W6) Token màu "Ngọc Các", SVG trận pháp, khung `border-image` cho các màn trong `ASSET_RESEARCH §7.3` | W0 | M | `apps/web/src/styles.css`, `components/ornaments/*` | Tắt được trang trí; `prefers-reduced-motion`; độ tương phản chữ đạt WCAG AA |
@@ -154,7 +154,7 @@ Lệnh nghiệm thu chung: `pnpm check` xanh và `pnpm sim bench --seeds 10 --ye
 
 | Rủi ro | Mức | Giảm thiểu |
 |---|---|---|
-| `travelDays` từ địa hình làm lệch cân bằng tranh chấp và di chuyển | Trung bình | MST + `extraEdges = 4` giữ mật độ cạnh như cũ; kẹp [3,15]; so sánh số tranh chấp/tử vong với baseline Phase 3 |
+| `travelDays` từ địa hình làm lệch cân bằng tranh chấp và di chuyển | Thấp (đã đo ở W4) | Tỉ lệ seed có tranh chấp trong 10 năm không đổi (51,5 % so với 52 %, 200 seed). Mục tiêu ≥ 8/10 chưa đạt **trước cả W4**. Nguyên nhân chính: quan hệ khởi đầu roll trong [−40, −25] trong khi ngưỡng khởi tranh chấp là ≤ −30, nên ~30 % seed không bao giờ tranh chấp; khi B có tông chủ Kim Đan thì A thường không đủ 80 % sức mạnh. Cần chủ dự án duyệt chỉnh cân bằng |
 | Hex trông "game bàn cờ" | Trung bình | Làm mềm bờ biển, sông cong, hillshade ở lớp render; ô 12–16 px để lưới khó thấy |
 | Prototype: đất quá nhiều (85–92 %), núi ít | Thấp | Tinh chỉnh falloff + long mạch ở W2, có test tỉ lệ |
 | Đồ thị không liên thông nếu địa điểm rơi trên đảo | Thấp | Chỉ đặt địa điểm trên khối đất lớn nhất; bất biến kiểm tra liên thông |

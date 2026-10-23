@@ -50,7 +50,19 @@ Nguồn sự thật cho kiểu là `packages/simulation/src/types.ts`; schema Zo
 - **Interrupt** chỉ dựa trên event người chơi đã biết trong tick (`processNews` trả `playerKnown`), cộng action của người chơi, lựa chọn mới và cái chết của người chơi.
 
 ## Bổ sung ADR-16 — địa hình (W0, 2026-10-24, schema v2)
-Đã duyệt, **chưa triển khai**. Chưa có thay đổi nào trong code. Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
+Đã duyệt. **W1–W4 đã triển khai** (đồ thị địa điểm suy ra từ địa hình). **Chưa triển khai (W5):** T1, T2 (`schemaVersion 2`, `terrainGenVersion`, `terrainDigest`, `biomeId`, `anchorCell`), migration, I12–I14. **W6:** T5. Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
+
+#### Ghi chú triển khai W4 (2026-10-23)
+- **Hàm:** `generateTerrainWorld(seed, data): { model, sites, edges }` (`worldgen/terrain/index.ts`). `sites[k]` là ô neo của `loc_(k+1)`, sắp tăng theo chỉ số ô. `generateTerrain(seed, data)` trả riêng `model` đúng chữ ký hợp đồng. `TERRAIN_GEN_VERSION = 1`.
+- **Digest địa hình:** FNV-1a 64 theo byte (`core/digest.ts › Fnv1a64`, 4 limb 16-bit, không BigInt), cho kết quả trùng `fnv1a64` trên cùng dãy byte. Mỗi giá trị băm thành 4 byte little-endian, theo thứ tự `width, height, elevation, moisture, biome, downstream, flow, qi, cellLocation`.
+- **Tham số:** `minSiteSpacing = 8`, `minVeinSpacing = 10`, `travelCostPerDay = 5`. `CONTENT_VERSION 0.3.0 → 0.4.0`.
+- **Nới khoảng cách địa điểm:** s, ⌊s/2⌋, …, 1. Linh mạch: `minVeinSpacing`, rồi 0.
+- **Chi phí cạnh:** min(`cost[u] + cost[v]`) trên các cặp ô biên kề nhau; `cost` là tổng `travelCost` từ ô neo tới ô (không tính ô neo).
+- **Trụ sở:** dùng lại `qiMountainBonus` làm "thưởng kề núi" (ô neo hoặc 1 trong 6 ô kề có tag `mountain`). Không thêm tham số.
+- **Linh mạch:** roll `veinCount` trữ lượng và sản lượng như cũ, sắp giảm dần, gán theo hạng `qi` của ô neo (hòa → id).
+- **Thứ tự gán loại:** bí cảnh trước (tổng khoảng cách hex tới 3 trụ sở lớn nhất, hòa → id), rồi 2 thị trấn (`travelCost` của biome ô neo nhỏ nhất, hòa → id).
+- **Linh khí:** kẹp theo `cultivation.energyClampBp` ([6000, 16000]) cả lúc tạo lẫn sau thưởng linh mạch.
+- **Tài nguyên:** `resourceStock = mulBp(roll, biome.resourceModBp)`.
 
 | Mã | Thay đổi | Lý do |
 |---|---|---|

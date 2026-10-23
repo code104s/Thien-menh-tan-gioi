@@ -1,9 +1,11 @@
 import { gameData } from '@tmtg/game-data';
 import { describe, expect, it } from 'vitest';
 import { digest } from '../src/core/digest.ts';
-import { factionId } from '../src/core/ids.ts';
+import { factionId, locationId } from '../src/core/ids.ts';
 import { isConnected } from '../src/world/graph.ts';
 import { PLAYER_ID, generateWorld, stoneSupply, type PlayerOrigin } from '../src/worldgen/generate.ts';
+import { createHexGrid, hexDistance } from '../src/worldgen/terrain/hexGrid.ts';
+import { generateTerrainWorld } from '../src/worldgen/terrain/index.ts';
 
 const SEEDS = Array.from({ length: 100 }, (_, i) => `seed-${String(i).padStart(3, '0')}`);
 const JOIN_0: PlayerOrigin = { kind: 'join_faction', factionIndex: 0 };
@@ -151,5 +153,63 @@ describe('worldgen — tất định và xuất thân', () => {
     expect(state.characters[PLAYER_ID]!.name).toBe('Lý Thanh Phong');
     const p = state.characters[PLAYER_ID]!;
     expect([p.realm, p.stage, p.progress, p.spiritStones]).toEqual(['qi', 'early', 0, 50]);
+  });
+});
+
+describe('worldgen v2 — địa hình (ADR-16), 30 seed', () => {
+  const terrainCfg = gameData.balance.worldgen.terrain;
+  const grid = createHexGrid(terrainCfg.width, terrainCfg.height);
+  const [energyMin, energyMax] = gameData.balance.cultivation.energyClampBp;
+  const cases = SEEDS.slice(0, 30).map((seed) => {
+    const terrain = generateTerrainWorld(seed, gameData);
+    const anchor = new Map(terrain.sites.map((cell, k) => [locationId(k + 1), cell]));
+    return { seed, terrain, anchor, state: generateWorld({ seed, origin: JOIN_0 }).state };
+  });
+
+  it('cạnh và travelDays lấy đúng từ đồ thị địa hình', () => {
+    for (const { terrain, state } of cases) {
+      const fromTerrain = terrain.edges.map((e) => `${locationId(e.a + 1)}-${locationId(e.b + 1)}:${e.travelDays}`);
+      const fromState = Object.values(state.locations)
+        .flatMap((l) => l.edges.filter((e) => l.id < e.to).map((e) => `${l.id}-${e.to}:${e.travelDays}`));
+      expect(fromState.sort()).toEqual(fromTerrain.sort());
+    }
+  });
+
+  it('địa hình không ghi vào WorldState.rng (chỉ luồng worldgen)', () => {
+    for (const { state } of cases) expect(Object.keys(state.rng)).toEqual(['worldgen']);
+  });
+
+  it('linh khí trong khoảng kẹp; trữ lượng và sản lượng linh mạch xếp theo địa khí', () => {
+    for (const { terrain, anchor, state } of cases) {
+      for (const l of Object.values(state.locations)) {
+        expect(l.spiritualEnergyBp).toBeGreaterThanOrEqual(energyMin);
+        expect(l.spiritualEnergyBp).toBeLessThanOrEqual(energyMax);
+      }
+      const veins = Object.values(state.spiritVeins)
+        .map((v) => ({ v, qi: terrain.model.qi[anchor.get(v.locationId)!]! }))
+        .sort((x, y) => y.qi - x.qi || (x.v.locationId < y.v.locationId ? -1 : 1));
+      for (let i = 1; i < veins.length; i++) {
+        expect(veins[i]!.v.reserve).toBeLessThanOrEqual(veins[i - 1]!.v.reserve);
+        expect(veins[i]!.v.yieldPerMonth).toBeLessThanOrEqual(veins[i - 1]!.v.yieldPerMonth);
+      }
+    }
+  });
+
+  it('bí cảnh xa trụ sở nhất trong các nút trống; thị trấn có biome dễ đi nhất', () => {
+    for (const { terrain, anchor, state } of cases) {
+      const seats = Object.values(state.factions).map((f) => anchor.get(f.seatLocationId)!);
+      const seatDistance = (id: string) => seats.reduce((sum, s) => sum + hexDistance(grid, s, anchor.get(id)!), 0);
+      const travelCost = (id: string) => gameData.biomes[terrain.model.biome[anchor.get(id)!]!]!.travelCost;
+      const special = Object.values(state.locations).filter((l) => l.kind === 'town' || l.kind === 'secret_realm');
+      for (const l of special) expect([l.ownerFactionId, l.veinId]).toEqual([null, null]);
+      const realm = special.filter((l) => l.kind === 'secret_realm');
+      const towns = special.filter((l) => l.kind === 'town');
+      expect(realm).toHaveLength(1);
+      expect(towns).toHaveLength(2);
+      const plainWild = Object.values(state.locations)
+        .filter((l) => l.kind === 'wild' && l.ownerFactionId === null && l.veinId === null);
+      for (const l of [...plainWild, ...towns]) expect(seatDistance(l.id)).toBeLessThanOrEqual(seatDistance(realm[0]!.id));
+      for (const l of plainWild) for (const t of towns) expect(travelCost(t.id)).toBeLessThanOrEqual(travelCost(l.id));
+    }
   });
 });
