@@ -202,6 +202,8 @@ export const balanceSchema = z.object({
       /** W4: khoảng cách hex tối thiểu giữa các địa điểm / giữa các linh mạch (nới dần nếu thiếu chỗ). */
       minSiteSpacing: z.int().positive(),
       minVeinSpacing: nonNeg,
+      /** Thưởng điểm trụ sở khi một ô kề ô neo là núi (ô neo đã có qiMountainBonus trong qi). */
+      seatMountainBonus: nonNeg,
       /** travelDays = clamp(⌊chi phí đường / travelCostPerDay⌋, travelDays). */
       travelCostPerDay: z.int().positive(),
     }),

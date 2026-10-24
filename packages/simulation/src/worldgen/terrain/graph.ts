@@ -4,7 +4,7 @@
  * travelDays = clamp(⌊cost / travelCostPerDay⌋, travelDays[0], travelDays[1]).
  */
 import type { GameData } from '@tmtg/game-data';
-import { clamp, divFloor } from '../../core/math.ts';
+import { DeterminismError, clamp, divFloor } from '../../core/math.ts';
 import { HEX_DIRECTIONS, type HexGrid } from './hexGrid.ts';
 import type { RegionResult } from './regions.ts';
 import type { SiteEdge } from './types.ts';
@@ -54,6 +54,10 @@ export function buildSiteGraph(grid: HexGrid, regions: RegionResult, siteCount: 
       parent[ra] = rb;
       chosen.push(e);
     }
+  }
+  // Kiểm tra trên MST, trước khi thêm cạnh phụ: cạnh phụ có thể bù số lượng cho một đồ thị bị tách.
+  if (chosen.length !== siteCount - 1) {
+    throw new DeterminismError(`Đồ thị địa điểm từ địa hình không liên thông (${siteCount - chosen.length} thành phần)`);
   }
   chosen.push(...rest.slice(0, extraEdges));
   return chosen

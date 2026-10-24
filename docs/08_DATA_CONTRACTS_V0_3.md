@@ -53,12 +53,13 @@ Nguồn sự thật cho kiểu là `packages/simulation/src/types.ts`; schema Zo
 Đã duyệt. **W1–W4 đã triển khai** (đồ thị địa điểm suy ra từ địa hình). **Chưa triển khai (W5):** T1, T2 (`schemaVersion 2`, `terrainGenVersion`, `terrainDigest`, `biomeId`, `anchorCell`), migration, I12–I14. **W6:** T5. Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
 
 #### Ghi chú triển khai W4 (2026-10-23)
-- **Hàm:** `generateTerrainWorld(seed, data): { model, sites, edges }` (`worldgen/terrain/index.ts`). `sites[k]` là ô neo của `loc_(k+1)`, sắp tăng theo chỉ số ô. `generateTerrain(seed, data)` trả riêng `model` đúng chữ ký hợp đồng. `TERRAIN_GEN_VERSION = 1`.
+- **Hàm:** `generateTerrainWorld(seed, data): { model, grid, sites, edges }` (`worldgen/terrain/index.ts`). `sites[k]` là ô neo của `loc_(k+1)`, sắp tăng theo chỉ số ô. `generateTerrain(seed, data)` trả riêng `model` đúng chữ ký hợp đồng. `TERRAIN_GEN_VERSION = 1`.
 - **Digest địa hình:** FNV-1a 64 theo byte (`core/digest.ts › Fnv1a64`, 4 limb 16-bit, không BigInt), cho kết quả trùng `fnv1a64` trên cùng dãy byte. Mỗi giá trị băm thành 4 byte little-endian, theo thứ tự `width, height, elevation, moisture, biome, downstream, flow, qi, cellLocation`.
 - **Tham số:** `minSiteSpacing = 8`, `minVeinSpacing = 10`, `travelCostPerDay = 5`. `CONTENT_VERSION 0.3.0 → 0.4.0`.
 - **Nới khoảng cách địa điểm:** s, ⌊s/2⌋, …, 1. Linh mạch: `minVeinSpacing`, rồi 0.
 - **Chi phí cạnh:** min(`cost[u] + cost[v]`) trên các cặp ô biên kề nhau; `cost` là tổng `travelCost` từ ô neo tới ô (không tính ô neo).
-- **Trụ sở:** dùng lại `qiMountainBonus` làm "thưởng kề núi" (ô neo hoặc 1 trong 6 ô kề có tag `mountain`). Không thêm tham số.
+- **Trụ sở** *(sửa sau review)*: tham số riêng `seatMountainBonus = 150`, chỉ cộng khi 1 trong 6 ô **kề** có tag `mountain`. Không tính ô neo vì `qi` của ô neo đã có `qiMountainBonus` (trước đây bị cộng hai lần).
+- **Liên thông** *(sửa sau review)*: `buildSiteGraph` ném `DeterminismError` nếu MST có ít hơn `locationCount − 1` cạnh, kiểm tra **trước** khi thêm `extraEdges`.
 - **Linh mạch:** roll `veinCount` trữ lượng và sản lượng như cũ, sắp giảm dần, gán theo hạng `qi` của ô neo (hòa → id).
 - **Thứ tự gán loại:** bí cảnh trước (tổng khoảng cách hex tới 3 trụ sở lớn nhất, hòa → id), rồi 2 thị trấn (`travelCost` của biome ô neo nhỏ nhất, hòa → id).
 - **Linh khí:** kẹp theo `cultivation.energyClampBp` ([6000, 16000]) cả lúc tạo lẫn sau thưởng linh mạch.
@@ -144,6 +145,7 @@ interface TerrainParams {
   // — W4 —
   minSiteSpacing: number;                        // khoảng cách hex tối thiểu giữa địa điểm
   minVeinSpacing: number;
+  seatMountainBonus: number;                     // thưởng điểm trụ sở khi một ô kề ô neo là núi
   travelCostPerDay: number;                      // travelDays = clamp(floorDiv(cost, k), travelDays[0], travelDays[1])
 }
 ```

@@ -2,6 +2,7 @@
  * Kiểu dữ liệu địa hình (ADR-16, docs/08 › TerrainModel). Không thuộc WorldState, không vào snapshot:
  * sinh lại được từ (seed, TERRAIN_GEN_VERSION, game-data).
  */
+import type { HexGrid } from './hexGrid.ts';
 
 /** Tăng khi đổi BẤT KỲ thuật toán hoặc tham số địa hình nào (code hoặc game-data). */
 export const TERRAIN_GEN_VERSION = 1;
@@ -41,6 +42,8 @@ export interface SiteEdge {
 /** Kết quả worldgen địa hình: model cho UI + phần suy ra cho WorldState. */
 export interface TerrainWorld {
   model: TerrainModel;
+  /** Lưới đã dùng để sinh model (tránh tạo lại ở worldgen). */
+  grid: HexGrid;
   /** Ô neo (anchorCell) của địa điểm thứ k, tăng dần theo chỉ số ô. */
   sites: number[];
   /** Đồ thị địa điểm: MST + extraEdges, sắp theo (a, b). */

@@ -1,6 +1,8 @@
 import { gameData, type GameData } from '@tmtg/game-data';
 import { describe, expect, it } from 'vitest';
+import { DeterminismError } from '../src/core/math.ts';
 import { biomeHasTag } from '../src/worldgen/terrain/biome.ts';
+import { buildSiteGraph } from '../src/worldgen/terrain/graph.ts';
 import { HEX_DIRECTIONS, createHexGrid, hexDistance } from '../src/worldgen/terrain/hexGrid.ts';
 import { TERRAIN_GEN_VERSION, generateTerrain, generateTerrainWorld, terrainDigest } from '../src/worldgen/terrain/index.ts';
 import { isPassable, largestLandMass, relaxedSpacings } from '../src/worldgen/terrain/sites.ts';
@@ -108,6 +110,7 @@ describe('địa điểm, vùng, đồ thị W4 — 100 seed', () => {
 
   it('tất định, digest khớp nội dung, golden digest không đổi', () => {
     for (const w of worlds.slice(0, 5)) {
+      expect([w.grid.width, w.grid.height]).toEqual([w.model.width, w.model.height]);
       const again = generateTerrainWorld(w.seed, gameData);
       expect(again.model.digest).toBe(w.model.digest);
       expect(again.sites).toEqual(w.sites);
@@ -126,6 +129,34 @@ describe('địa điểm, vùng, đồ thị W4 — 100 seed', () => {
     const cellLocation = Int16Array.from(model.cellLocation);
     cellLocation[0] = cellLocation[0] === -1 ? 0 : -1;
     expect(terrainDigest({ ...model, cellLocation })).not.toBe(model.digest);
+  });
+});
+
+describe('buildSiteGraph — kiểm tra liên thông', () => {
+  // Lưới 8×8: khối trái (x ≤ 2) chia 3 vùng kề nhau đôi một (tam giác → 1 cạnh thừa ngoài MST),
+  // cột x = 3, 4 không thuộc vùng nào, khối phải (x ≥ 5) chia 2 vùng. 5 địa điểm, 2 thành phần.
+  const small = createHexGrid(8, 8);
+  const cellLocation = new Int16Array(small.cellCount);
+  for (let i = 0; i < small.cellCount; i++) {
+    const x = i % 8;
+    const y = Math.floor(i / 8);
+    if (x <= 2) cellLocation[i] = y >= 4 ? 2 : x <= 1 ? 0 : 1;
+    else if (x <= 4) cellLocation[i] = -1;
+    else cellLocation[i] = y < 4 ? 3 : 4;
+  }
+  const regions = { cellLocation, cost: new Int32Array(small.cellCount).fill(1) };
+
+  it('từ chối đồ thị bị tách dù cạnh phụ đủ bù số lượng (MST 3 cạnh + 1 cạnh thừa = 4 = n − 1)', () => {
+    expect(() => buildSiteGraph(small, regions, 5, gameData)).toThrow(DeterminismError);
+    expect(() => buildSiteGraph(small, regions, 5, gameData)).toThrow(/không liên thông \(2 thành phần\)/);
+  });
+
+  it('chấp nhận khi hai khối được nối', () => {
+    const joined = Int16Array.from(cellLocation);
+    for (let y = 0; y < 8; y++) joined[y * 8 + 3] = 1;
+    for (let y = 0; y < 8; y++) joined[y * 8 + 4] = 3;
+    const edges = buildSiteGraph(small, { ...regions, cellLocation: joined }, 5, gameData);
+    expect(edges.length).toBeGreaterThanOrEqual(4);
   });
 });
 

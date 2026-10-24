@@ -1,10 +1,11 @@
-import { gameData } from '@tmtg/game-data';
+import { gameData, type GameData } from '@tmtg/game-data';
 import { describe, expect, it } from 'vitest';
 import { digest } from '../src/core/digest.ts';
 import { factionId, locationId } from '../src/core/ids.ts';
 import { isConnected } from '../src/world/graph.ts';
 import { PLAYER_ID, generateWorld, stoneSupply, type PlayerOrigin } from '../src/worldgen/generate.ts';
-import { createHexGrid, hexDistance } from '../src/worldgen/terrain/hexGrid.ts';
+import { biomeHasTag } from '../src/worldgen/terrain/biome.ts';
+import { createHexGrid, hexDistance, neighborsOf } from '../src/worldgen/terrain/hexGrid.ts';
 import { generateTerrainWorld } from '../src/worldgen/terrain/index.ts';
 
 const SEEDS = Array.from({ length: 100 }, (_, i) => `seed-${String(i).padStart(3, '0')}`);
@@ -210,6 +211,33 @@ describe('worldgen v2 — địa hình (ADR-16), 30 seed', () => {
         .filter((l) => l.kind === 'wild' && l.ownerFactionId === null && l.veinId === null);
       for (const l of [...plainWild, ...towns]) expect(seatDistance(l.id)).toBeLessThanOrEqual(seatDistance(realm[0]!.id));
       for (const l of plainWild) for (const t of towns) expect(travelCost(t.id)).toBeLessThanOrEqual(travelCost(l.id));
+    }
+  });
+
+  it('trụ sở đầu tiên = địa điểm có (qi ô neo + seatMountainBonus nếu ô KỀ có núi) cao nhất', () => {
+    const firstSeat = (data: GameData, seed: string) => {
+      const terrain = generateTerrainWorld(seed, data);
+      const around: number[] = [];
+      const scored = terrain.sites.map((cell, k) => {
+        const count = neighborsOf(grid, cell, around);
+        const nearby = around.slice(0, count).some((c) => biomeHasTag(data, terrain.model.biome[c]!, 'mountain'));
+        return { id: locationId(k + 1), score: terrain.model.qi[cell]! + (nearby ? data.balance.worldgen.terrain.seatMountainBonus : 0), nearby };
+      });
+      scored.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : 1));
+      const actual = generateWorld({ seed, origin: JOIN_0, data }).state.factions[factionId(1)]!.seatLocationId;
+      return { expected: scored[0]!, actual, anyNearby: scored.some((x) => x.nearby) };
+    };
+    const huge: GameData = {
+      ...gameData,
+      balance: { ...gameData.balance, worldgen: { ...gameData.balance.worldgen, terrain: { ...terrainCfg, seatMountainBonus: 100_000 } } },
+    };
+    for (const { seed } of cases) {
+      const normal = firstSeat(gameData, seed);
+      expect(normal.actual).toBe(normal.expected.id);
+      // Thưởng áp đảo: nếu có địa điểm kề núi thì trụ sở đầu tiên phải kề núi.
+      const forced = firstSeat(huge, seed);
+      expect(forced.actual).toBe(forced.expected.id);
+      if (forced.anyNearby) expect(forced.expected.nearby).toBe(true);
     }
   });
 });

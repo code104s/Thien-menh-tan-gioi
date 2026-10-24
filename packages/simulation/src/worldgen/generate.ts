@@ -11,7 +11,7 @@ import { getStream, type RngStream } from '../core/rng.ts';
 import { baseLifespanDays, stageThresholdFx } from '../rules/realm.ts';
 import { hopDistances } from '../world/graph.ts';
 import { biomeHasTag } from './terrain/biome.ts';
-import { createHexGrid, hexDistance, neighborsOf } from './terrain/hexGrid.ts';
+import { hexDistance, neighborsOf } from './terrain/hexGrid.ts';
 import { generateTerrainWorld } from './terrain/index.ts';
 import {
   BURN_SINKS, MINT_SOURCES,
@@ -82,7 +82,7 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
   // 1. Địa hình (ADR-16): địa điểm, cạnh và travelDays suy ra từ lưới hex; luồng RNG địa hình là cục bộ.
   const terrain = generateTerrainWorld(params.seed, data);
   const { biome: cellBiome, qi } = terrain.model;
-  const grid = createHexGrid(terrain.model.width, terrain.model.height);
+  const { grid } = terrain;
   const n = terrain.sites.length;
   const locIds = Array.from({ length: n }, (_, i) => locationId(i + 1));
   const anchorOf = new Map<EntityId, number>(locIds.map((id, i) => [id, terrain.sites[i]!]));
@@ -113,15 +113,15 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
   const loc = (id: EntityId): Location => state.locations[id]!;
   const byQi = (a: EntityId, b: EntityId) => qi[anchor(b)]! - qi[anchor(a)]! || compareIds(a, b);
 
-  // 2. Trụ sở: điểm = địa khí ô neo + thưởng nếu ô neo hoặc ô kề có núi; cách nhau ≥ minSeatDistance cạnh,
-  //    nới điều kiện nếu không đủ.
-  const nearMountain = (cell: number): boolean => {
-    const around: number[] = [];
-    const count = neighborsOf(grid, cell, around);
-    return [cell, ...around.slice(0, count)].some((c) => biomeHasTag(data, cellBiome[c]!, 'mountain'));
-  };
-  const seatScore = (id: EntityId) => qi[anchor(id)]! + (nearMountain(anchor(id)) ? cfg.terrain.qiMountainBonus : 0);
-  const order = [...locIds].sort((a, b) => seatScore(b) - seatScore(a) || compareIds(a, b));
+  // 2. Trụ sở: điểm = địa khí ô neo + seatMountainBonus nếu một ô kề có núi (ô neo đã được thưởng núi trong qi);
+  //    cách nhau ≥ minSeatDistance cạnh, nới điều kiện nếu không đủ.
+  const around: number[] = [];
+  const seatScore = new Map(locIds.map((id) => {
+    const count = neighborsOf(grid, anchor(id), around);
+    const mountainNearby = around.slice(0, count).some((c) => biomeHasTag(data, cellBiome[c]!, 'mountain'));
+    return [id, qi[anchor(id)]! + (mountainNearby ? cfg.terrain.seatMountainBonus : 0)];
+  }));
+  const order = [...locIds].sort((a, b) => seatScore.get(b)! - seatScore.get(a)! || compareIds(a, b));
   const seats: EntityId[] = [];
   for (const minDist of [cfg.minSeatDistance, 1]) {
     for (const candidate of order) {

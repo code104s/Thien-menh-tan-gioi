@@ -4,7 +4,6 @@
  */
 import type { GameData } from '@tmtg/game-data';
 import { Fnv1a64 } from '../../core/digest.ts';
-import { DeterminismError } from '../../core/math.ts';
 import { generateBiomes } from './biome.ts';
 import { generateMoisture } from './climate.ts';
 import { generateElevation, terrainRng } from './elevation.ts';
@@ -38,7 +37,6 @@ export function generateTerrainWorld(seed: string, data: GameData): TerrainWorld
   const sites = selectSites(grid, biome, qi, mass, data, siteCount);
   const regions = assignRegions(grid, biome, sites, data);
   const edges = buildSiteGraph(grid, regions, siteCount, data);
-  if (edges.length < siteCount - 1) throw new DeterminismError('Đồ thị địa điểm từ địa hình không liên thông');
   const arrays = {
     width: grid.width,
     height: grid.height,
@@ -50,7 +48,7 @@ export function generateTerrainWorld(seed: string, data: GameData): TerrainWorld
     qi,
     cellLocation: regions.cellLocation,
   };
-  return { model: { terrainGenVersion: TERRAIN_GEN_VERSION, ...arrays, digest: terrainDigest(arrays) }, sites, edges };
+  return { model: { terrainGenVersion: TERRAIN_GEN_VERSION, ...arrays, digest: terrainDigest(arrays) }, grid, sites, edges };
 }
 
 /** `generateTerrain(seed, data): TerrainModel` theo hợp đồng docs/08 (dùng cho UI ở W6). */

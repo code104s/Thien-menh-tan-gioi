@@ -211,6 +211,7 @@
       "qiNoiseCellSize": 64,
       "minSiteSpacing": 8,
       "minVeinSpacing": 10,
+      "seatMountainBonus": 150,
       "travelCostPerDay": 5
     }
   },

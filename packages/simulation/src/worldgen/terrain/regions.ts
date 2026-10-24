@@ -3,8 +3,8 @@
  * (biển không đi được). Ô hòa khoảng cách thuộc vùng nào tới trước theo thứ tự pop (dist, chỉ số ô) → tất định.
  */
 import type { GameData } from '@tmtg/game-data';
+import { CellHeap } from './heap.ts';
 import { HEX_DIRECTIONS, type HexGrid } from './hexGrid.ts';
-import { CellHeap } from './hydrology.ts';
 
 export interface RegionResult {
   /** Chỉ số site sở hữu ô; −1 = không tới được (biển, đảo). */
