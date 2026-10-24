@@ -62,6 +62,8 @@ export function buildViewModel(state: WorldState, ctx: SimContext): ViewModel {
       edges: l.edges.map((e) => ({ ...e })),
       disputed: vein !== undefined && disputedVeins.has(vein.id),
       daoMark: l.daoMarkIds.length > 0,
+      biomeName: data.biomes.find((b) => b.id === l.biomeId)?.name ?? null,
+      anchorCell: l.anchorCell,
       characterIds: sortedValues(state.characters).filter((c) => c.alive && c.locationId === l.id && known(c)).map((c) => c.id),
     };
   });

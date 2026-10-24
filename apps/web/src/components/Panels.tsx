@@ -42,7 +42,7 @@ export function HerePanel({ view }: { view: ViewModel }) {
     <div>
       <h2>{l.name}</h2>
       <p className="muted">
-        {l.kindName} · <span style={{ color: factionColor(view, l.ownerFactionId) }}>{l.ownerName ?? 'vô chủ'}</span>
+        {l.kindName}{l.biomeName ? ` · ${l.biomeName}` : ''} · <span style={{ color: factionColor(view, l.ownerFactionId) }}>{l.ownerName ?? 'vô chủ'}</span>
         {l.id === view.player.locationId ? ' · bạn đang ở đây' : ''}
       </p>
       <div className="stats">

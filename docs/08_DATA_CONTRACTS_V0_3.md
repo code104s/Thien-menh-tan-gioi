@@ -50,7 +50,7 @@ Nguồn sự thật cho kiểu là `packages/simulation/src/types.ts`; schema Zo
 - **Interrupt** chỉ dựa trên event người chơi đã biết trong tick (`processNews` trả `playerKnown`), cộng action của người chơi, lựa chọn mới và cái chết của người chơi.
 
 ## Bổ sung ADR-16 — địa hình (W0, 2026-10-24, schema v2)
-Đã duyệt. **W1–W5 đã triển khai**: đồ thị suy ra từ địa hình; T1, T2 (`schemaVersion 2`, `terrainGenVersion`, `terrainDigest`, `biomeId`, `anchorCell`), migration v1 → v2, I12–I14. **Chưa triển khai (W6):** T5 (protocol `TERRAIN`). Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
+Đã duyệt. **W1–W5 đã triển khai**: đồ thị suy ra từ địa hình; T1, T2 (`schemaVersion 2`, `terrainGenVersion`, `terrainDigest`, `biomeId`, `anchorCell`), migration v1 → v2, I12–I14; **W6:** T5 (protocol `TERRAIN`, `LocationView.biomeName/anchorCell`). Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
 
 #### Ghi chú triển khai W4 (2026-10-23)
 - **Hàm:** `generateTerrainWorld(seed, data): { model, grid, sites, edges }` (`worldgen/terrain/index.ts`). `sites[k]` là ô neo của `loc_(k+1)`, sắp tăng theo chỉ số ô. `generateTerrain(seed, data)` trả riêng `model` đúng chữ ký hợp đồng. `TERRAIN_GEN_VERSION = 1`.

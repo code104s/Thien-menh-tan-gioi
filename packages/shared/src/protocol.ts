@@ -6,7 +6,7 @@ import { ACTION_TYPES } from '@tmtg/simulation';
 import { z } from 'zod';
 import { originSchema, saveFileSchema, type SaveFile } from './saveFile.ts';
 import type { FeedEntry, SkipSummary, Speed, ViewModel } from './view.ts';
-import type { ChronicleEntry } from '@tmtg/simulation';
+import type { ChronicleEntry, TerrainModel, TerrainStatus } from '@tmtg/simulation';
 
 const entityId = z.string().regex(/^[a-z]+_[0-9]+$/);
 
@@ -49,4 +49,7 @@ export type FromWorker =
   | { type: 'COMMAND_RESULT'; ok: boolean; reason: string | null }
   | { type: 'SAVE_DATA'; slot: string; save: SaveFile }
   | { type: 'CHRONICLE'; entries: ChronicleEntry[] }
+  /** ADR-16: gửi ngay sau READY; mảng của TerrainModel được chuyển (transfer), không copy. */
+  | { type: 'TERRAIN'; status: 'ok'; terrain: TerrainModel }
+  | { type: 'TERRAIN'; status: 'unavailable'; reason: Extract<TerrainStatus, { status: 'unavailable' }>['reason'] }
   | { type: 'ERROR'; message: string };

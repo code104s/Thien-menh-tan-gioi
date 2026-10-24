@@ -1,5 +1,6 @@
 import { createContext, digest, generateWorld, run, type InterruptReason } from '@tmtg/simulation';
 import { describe, expect, it } from 'vitest';
+import { saveChecksum } from '@tmtg/shared';
 import { SimHost } from '../src/worker/host.ts';
 
 const ALL_STOPS = new Set<InterruptReason>(['critical_event', 'choice_required', 'game_over', 'player_action_finished']);
@@ -164,5 +165,40 @@ describe('view model lọc theo hiểu biết', () => {
     const host = SimHost.createNew({ ...creation, seed: 'bench-002' });
     const r = host.advance(3600, ALL_STOPS);
     if (r.interrupt) expect(ALL_STOPS.has(r.interrupt.reason)).toBe(true);
+  });
+});
+
+describe('địa hình cho bản đồ (ADR-16, W6)', () => {
+  it('thế giới mới: terrain() trả model khớp digest; view model có biome và ô neo', () => {
+    const host = SimHost.createNew(creation);
+    const t = host.terrain();
+    expect(t.status).toBe('ok');
+    if (t.status !== 'ok') return;
+    expect(t.model.digest).toBe(host.state.terrainDigest);
+    const view = host.view();
+    view.locations.forEach((l, k) => {
+      expect(l.anchorCell).not.toBeNull();
+      expect(t.model.cellLocation[l.anchorCell!]).toBe(k);
+      expect(l.biomeName).toBeTruthy();
+    });
+  });
+
+  it('terrain() không đổi state: digest giữ nguyên', () => {
+    const host = SimHost.createNew(creation);
+    const before = digest(host.state);
+    host.terrain();
+    expect(digest(host.state)).toBe(before);
+  });
+
+  it('save mang digest địa hình lệch vẫn tải được, terrain() báo digest_mismatch', () => {
+    const host = SimHost.createNew(creation);
+    const save = host.toSave('2026-10-24T00:00:00.000Z');
+    const snapshot = JSON.parse(save.snapshot) as Record<string, unknown>;
+    snapshot['terrainDigest'] = '0000000000000000';
+    const tampered = { ...save, snapshot: JSON.stringify(snapshot) };
+    tampered.checksum = saveChecksum(tampered.snapshot, tampered.events, tampered.commands, tampered.pendingEventIds);
+    const loaded = SimHost.fromSave(tampered);
+    expect(loaded.terrain()).toEqual({ status: 'unavailable', reason: 'digest_mismatch' });
+    expect(loaded.view().locations.every((l) => l.anchorCell !== null)).toBe(true);
   });
 });

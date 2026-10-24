@@ -2,20 +2,41 @@ import type { LocationView, ViewModel } from '@tmtg/shared';
 import { useEffect, useMemo, useRef, type MouseEvent } from 'react';
 import { computeLayout } from '../app/layout.ts';
 import { useUi } from '../app/store.ts';
+import { TerrainMap } from './map/TerrainMap.tsx';
+import { FACTION_COLORS, NEUTRAL, RADIUS, drawMarker, factionColor, markerText } from './map/markers.ts';
 
-export const FACTION_COLORS = ['#b5452f', '#3b7ea1', '#4a8f5c'];
-const NEUTRAL = '#8a8172';
+export { factionColor };
+
 const PADDING = 48;
-const RADIUS = 13;
 
-export function factionColor(view: ViewModel, factionId: string | null): string {
-  if (!factionId) return NEUTRAL;
-  const index = view.factions.findIndex((f) => f.id === factionId);
-  return FACTION_COLORS[index] ?? NEUTRAL;
+/**
+ * Bản đồ khu vực. Có địa hình (ADR-16) → bản đồ hex; không có (save cũ, digest lệch, chưa nhận) → sơ đồ đồ thị.
+ * Màu = tông môn sở hữu, ◆ linh mạch, ⚔ đang tranh chấp, ✦ Đạo Ngân, vòng vàng = bạn.
+ */
+export function MapCanvas({ view }: { view: ViewModel }) {
+  const terrain = useUi((s) => s.terrain);
+  const terrainUnavailable = useUi((s) => s.terrainUnavailable);
+  const useTerrain = terrain !== null && view.locations.every((l) => l.anchorCell !== null);
+  return (
+    <div className="map">
+      {useTerrain
+        ? <TerrainMap key={`${view.seed}:${terrain.digest}`} view={view} terrain={terrain} />
+        : <SchematicMap view={view} />}
+      <div className="legend">
+        {view.factions.map((f, i) => (
+          <span key={f.id}><i style={{ background: FACTION_COLORS[i] }} />{f.name}</span>
+        ))}
+        <span><i style={{ background: NEUTRAL }} />Vô chủ</span>
+        <span>■ trụ sở ▲ thị trấn ● hoang dã · ◆ linh mạch ⚔ tranh chấp ✦ Đạo Ngân · vòng vàng: bạn</span>
+        {useTerrain && <span>Cuộn để phóng · kéo để di chuyển · nhấp đúp để về khung</span>}
+        {terrainUnavailable && <span className="notice-inline">{terrainUnavailable}</span>}
+      </div>
+    </div>
+  );
 }
 
-/** Bản đồ Canvas 2D: màu = tông môn sở hữu, ◆ linh mạch, ⚔ đang tranh chấp, ✦ Đạo Ngân, vòng vàng = bạn. */
-export function MapCanvas({ view }: { view: ViewModel }) {
+/** Sơ đồ đồ thị (bố cục lực đẩy-kéo) — dùng khi không có địa hình. */
+function SchematicMap({ view }: { view: ViewModel }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selected = useUi((s) => s.selectedLocationId);
   // Đồ thị cố định theo seed nên chỉ tính bố cục một lần.
@@ -61,14 +82,10 @@ export function MapCanvas({ view }: { view: ViewModel }) {
 
       for (const l of view.locations) {
         const { x, y } = toScreen(canvas, l);
-        const color = factionColor(view, l.ownerFactionId);
-        g.fillStyle = color;
+        g.fillStyle = factionColor(view, l.ownerFactionId);
         g.strokeStyle = ink;
         g.lineWidth = l.id === selected ? 3 : 1.5;
-        g.beginPath();
-        if (l.kind === 'sect_seat') g.rect(x - RADIUS, y - RADIUS, RADIUS * 2, RADIUS * 2);
-        else if (l.kind === 'town') { g.moveTo(x, y - RADIUS - 2); g.lineTo(x + RADIUS + 2, y + RADIUS - 2); g.lineTo(x - RADIUS - 2, y + RADIUS - 2); g.closePath(); }
-        else g.arc(x, y, RADIUS, 0, Math.PI * 2);
+        drawMarker(g, l, x, y, RADIUS);
         g.fill(); g.stroke();
         if (l.id === view.player.locationId) {
           g.strokeStyle = '#e0b84c'; g.lineWidth = 3;
@@ -77,7 +94,7 @@ export function MapCanvas({ view }: { view: ViewModel }) {
         g.fillStyle = '#fdf8ee';
         g.font = 'bold 12px system-ui, sans-serif';
         g.textAlign = 'center';
-        const marks = `${l.veinName ? '◆' : ''}${l.disputed ? '⚔' : ''}${l.daoMark ? '✦' : ''}`;
+        const marks = markerText(l);
         if (marks) g.fillText(marks, x, y + 4);
         g.fillStyle = ink;
         g.font = '12px system-ui, sans-serif';
@@ -105,16 +122,5 @@ export function MapCanvas({ view }: { view: ViewModel }) {
     if (best) useUi.setState({ selectedLocationId: best.id, tab: 'here' });
   };
 
-  return (
-    <div className="map">
-      <canvas ref={canvasRef} onClick={onClick} aria-label="Bản đồ khu vực" />
-      <div className="legend">
-        {view.factions.map((f, i) => (
-          <span key={f.id}><i style={{ background: FACTION_COLORS[i] }} />{f.name}</span>
-        ))}
-        <span><i style={{ background: NEUTRAL }} />Vô chủ</span>
-        <span>■ trụ sở ▲ thị trấn ● hoang dã · ◆ linh mạch ⚔ tranh chấp ✦ Đạo Ngân · vòng vàng: bạn</span>
-      </div>
-    </div>
-  );
+  return <canvas ref={canvasRef} onClick={onClick} aria-label="Sơ đồ khu vực" />;
 }

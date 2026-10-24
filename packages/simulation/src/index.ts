@@ -16,6 +16,7 @@ export * from './rules/realm.ts';
 export * from './world/graph.ts';
 export * from './worldgen/generate.ts';
 export { TERRAIN_GEN_VERSION, generateTerrain, type TerrainModel } from './worldgen/terrain/index.ts';
+export { createHexGrid, type HexGrid } from './worldgen/terrain/hexGrid.ts';
 export * from './actions/index.ts';
 export * from './ai/planner.ts';
 export * from './rules/cultivation.ts';

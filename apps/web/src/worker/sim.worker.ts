@@ -8,7 +8,7 @@ import type { InterruptReason } from '@tmtg/simulation';
 import { SimHost } from './host.ts';
 
 interface WorkerScope {
-  postMessage(message: FromWorker): void;
+  postMessage(message: FromWorker, transfer?: Transferable[]): void;
   onmessage: ((event: MessageEvent<unknown>) => void) | null;
 }
 const scope = self as unknown as WorkerScope;
@@ -96,6 +96,20 @@ function ready() {
   if (!host) return;
   halt();
   post({ type: 'READY', view: host.view(), feed: [...host.feed], speed, stopOnImportant });
+  postTerrain();
+}
+
+/** Gửi địa hình một lần sau READY; chuyển quyền sở hữu các mảng thay vì copy. */
+function postTerrain() {
+  if (!host) return;
+  const result = host.terrain();
+  if (result.status !== 'ok') {
+    post({ type: 'TERRAIN', status: 'unavailable', reason: result.reason });
+    return;
+  }
+  const t = result.model;
+  const buffers = [t.elevation, t.moisture, t.biome, t.downstream, t.flow, t.qi, t.cellLocation].map((a) => a.buffer as ArrayBuffer);
+  scope.postMessage({ type: 'TERRAIN', status: 'ok', terrain: t }, buffers);
 }
 
 scope.onmessage = (event) => {

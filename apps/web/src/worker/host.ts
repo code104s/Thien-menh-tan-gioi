@@ -5,7 +5,8 @@
  *   bước 0 của tick ngày đó, nên replay từ seed + command log cho đúng cùng kết quả.
  */
 import {
-  SALIENCE, applyCommands, buildChronicle, createContext, describeEvent, formatDate, generateWorld, tick, toSnapshot,
+  SALIENCE, applyCommands, buildChronicle, createContext, describeEvent, formatDate, generateWorld, regenerateTerrain, tick,
+  toSnapshot, type TerrainStatus,
   type ChronicleEntry, type InterruptReason, type PlayerCommand, type PlayerCommandPayload, type PlayerOrigin,
   type SimContext, type WorldEvent, type WorldState,
 } from '@tmtg/simulation';
@@ -87,6 +88,11 @@ export class SimHost {
 
   get eventLog(): readonly WorldEvent[] {
     return this.log;
+  }
+
+  /** Địa hình để hiển thị (ADR-16): sinh lại từ seed, kiểm digest; không đổi state. */
+  terrain(): TerrainStatus {
+    return regenerateTerrain(this.state, this.ctx.data);
   }
 
   view(): ViewModel {

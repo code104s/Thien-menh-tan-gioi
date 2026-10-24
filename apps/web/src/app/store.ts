@@ -2,7 +2,7 @@
  * State giao diện (Zustand) + kênh nói chuyện với worker. Không chứa logic mô phỏng:
  * mọi thay đổi thế giới đi qua tin nhắn COMMAND / SET_SPEED / SKIP_UNTIL tới worker.
  */
-import type { ChronicleEntry, PlayerCommandPayload } from '@tmtg/simulation';
+import type { ChronicleEntry, PlayerCommandPayload, TerrainModel } from '@tmtg/simulation';
 import {
   parseSaveFile,
   type FeedEntry, type FromWorker, type InterruptKind, type SaveFile, type SkipSummary, type Speed, type ToWorker,
@@ -36,7 +36,17 @@ interface UiState {
   chronicle: ChronicleEntry[];
   notice: string | null;
   error: string | null;
+  /** ADR-16: địa hình để vẽ bản đồ; null khi chưa nhận hoặc không dựng được. */
+  terrain: TerrainModel | null;
+  /** Lý do không có địa hình (UI rơi về sơ đồ cũ); null khi có địa hình hoặc chưa nhận. */
+  terrainUnavailable: string | null;
 }
+
+const TERRAIN_UNAVAILABLE_TEXT = {
+  legacy_save: 'Save cũ chưa có địa hình — hiển thị sơ đồ.',
+  unsupported_version: 'Save tạo bởi phiên bản địa hình khác — hiển thị sơ đồ.',
+  digest_mismatch: 'Địa hình sinh lại không khớp save — hiển thị sơ đồ.',
+} as const;
 
 const db = new SaveDatabase();
 let worker: Worker | null = null;
@@ -59,6 +69,8 @@ export const useUi = create<UiState>(() => ({
   chronicle: [],
   notice: null,
   error: null,
+  terrain: null,
+  terrainUnavailable: null,
 }));
 
 const set = useUi.setState;
@@ -78,7 +90,7 @@ function receive(message: FromWorker) {
       set({
         screen: 'game', view: message.view, feed: message.feed, speed: message.speed, running: false,
         stopOnImportant: message.stopOnImportant, interrupt: null, selectedLocationId: message.view.player.locationId,
-        error: null,
+        error: null, terrain: null, terrainUnavailable: null,
       });
       send({ type: 'SET_SETTINGS', stopOnImportant: useUi.getState().stopOnImportant });
       return;
@@ -105,6 +117,10 @@ function receive(message: FromWorker) {
       return;
     case 'SAVE_DATA':
       void persist(message.slot, message.save);
+      return;
+    case 'TERRAIN':
+      if (message.status === 'ok') set({ terrain: message.terrain, terrainUnavailable: null });
+      else set({ terrain: null, terrainUnavailable: TERRAIN_UNAVAILABLE_TEXT[message.reason] });
       return;
     case 'CHRONICLE':
       set({ chronicle: message.entries, screen: 'chronicle' });

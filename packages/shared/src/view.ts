@@ -69,6 +69,10 @@ export interface LocationView {
   edges: { to: EntityId; travelDays: number }[];
   disputed: boolean;
   daoMark: boolean;
+  /** ADR-16: tên biome của ô neo; null với save cũ không có địa hình. */
+  biomeName: string | null;
+  /** ADR-16: ô neo trong TerrainModel; null với save cũ. */
+  anchorCell: number | null;
   /** Nhân vật người chơi biết đang ở đây (cùng địa điểm hoặc cùng tông môn). */
   characterIds: EntityId[];
 }

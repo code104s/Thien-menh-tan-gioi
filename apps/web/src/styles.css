@@ -123,3 +123,4 @@ input, select { font: inherit; color: var(--ink); background: var(--paper-2); bo
   .game { grid-template-columns: 1fr; grid-template-rows: auto 50vh auto auto; grid-template-areas: "top" "map" "side" "feed"; height: auto; }
   .side { border-left: 0; border-top: 1px solid var(--line); }
 }
+.notice-inline { color: var(--important); }
