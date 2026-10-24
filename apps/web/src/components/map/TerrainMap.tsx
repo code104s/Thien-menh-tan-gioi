@@ -31,6 +31,8 @@ export function cellOwners(terrain: TerrainModel, view: ViewModel): Int16Array {
 export function TerrainMap({ view, terrain }: { view: ViewModel; terrain: TerrainModel }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selected = useUi((s) => s.selectedLocationId);
+  // Nhãn đọc màu từ token CSS: đổi chế độ trang trí thì vẽ lại.
+  const ornate = useUi((s) => s.ornate);
   const [camera, setCamera] = useState<Camera>(HOME);
   const drag = useRef<{ x: number; y: number; start: Camera; moved: boolean } | null>(null);
 
@@ -139,7 +141,7 @@ export function TerrainMap({ view, terrain }: { view: ViewModel; terrain: Terrai
     observer.observe(canvas);
     return () => observer.disconnect();
     // transformFor chỉ phụ thuộc map + camera.
-  }, [view, base, territory, anchors, camera, selected, map]);
+  }, [view, base, territory, anchors, camera, selected, map, ornate]);
 
   // Cuộn chuột: listener gốc không passive để chặn cuộn trang.
   useEffect(() => {

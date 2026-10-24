@@ -39,6 +39,7 @@ export function MapCanvas({ view }: { view: ViewModel }) {
 function SchematicMap({ view }: { view: ViewModel }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const selected = useUi((s) => s.selectedLocationId);
+  const ornate = useUi((s) => s.ornate);
   // Đồ thị cố định theo seed nên chỉ tính bố cục một lần.
   const layout = useMemo(() => computeLayout(view.locations), [view.seed]);
 
@@ -106,7 +107,7 @@ function SchematicMap({ view }: { view: ViewModel }) {
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [view, layout, selected]);
+  }, [view, layout, selected, ornate]);
 
   const onClick = (event: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current!;

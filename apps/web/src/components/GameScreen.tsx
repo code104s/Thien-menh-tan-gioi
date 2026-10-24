@@ -42,6 +42,7 @@ function TopBar({ view }: { view: ViewModel }) {
   const speed = useUi((s) => s.speed);
   const running = useUi((s) => s.running);
   const stopOnImportant = useUi((s) => s.stopOnImportant);
+  const ornate = useUi((s) => s.ornate);
   const blocked = view.choices.length > 0 || view.gameOver !== null;
   return (
     <header className="topbar">
@@ -71,6 +72,10 @@ function TopBar({ view }: { view: ViewModel }) {
       <label className="check">
         <input type="checkbox" checked={stopOnImportant} onChange={(e) => actions.setStopOnImportant(e.target.checked)} />
         Dừng khi có biến cố quan trọng
+      </label>
+      <label className="check" title="Khung, trận pháp và bảng màu Ngọc Các; tắt để dùng giao diện tối giản">
+        <input type="checkbox" checked={ornate} onChange={(e) => actions.setOrnate(e.target.checked)} />
+        Trang trí
       </label>
       <span className="spacer" />
       <button type="button" onClick={() => actions.openChronicle()}>Sử ký</button>

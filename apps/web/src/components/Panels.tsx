@@ -1,6 +1,7 @@
 import type { ViewModel } from '@tmtg/shared';
 import { useUi } from '../app/store.ts';
 import { factionColor } from './MapCanvas.tsx';
+import { FormationCircle } from './ornaments/FormationCircle.tsx';
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return <div className="stat"><span>{label}</span><strong>{value}</strong></div>;
@@ -8,14 +9,21 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 export function SelfPanel({ view }: { view: ViewModel }) {
   const p = view.player;
+  const ornate = useUi((s) => s.ornate);
+  const cultivating = p.currentAction?.type === 'cultivate' || p.currentAction?.type === 'seclusion';
   return (
     <div>
       <h2>{p.name}</h2>
       <p className="muted">{p.factionName ? `${p.rankName} ${p.factionName}` : 'Tán tu'} · tại {p.locationName}</p>
-      <div className="realm">
-        <strong>{p.realmName} {p.stageName}</strong>
-        <progress max={100} value={p.progressPct} /> <span>{p.progressPct}%</span>
-      </div>
+      {ornate ? (
+        <FormationCircle realmName={p.realmName} stageIndex={p.stageIndex} progressPct={p.progressPct}
+          breakthroughChancePct={p.breakthroughChancePct} active={cultivating && p.alive} />
+      ) : (
+        <div className="realm">
+          <strong>{p.realmName} {p.stageName}</strong>
+          <progress max={100} value={p.progressPct} /> <span>{p.progressPct}%</span>
+        </div>
+      )}
       <div className="stats">
         <Stat label="Tuổi" value={`${p.ageYears} / ${p.lifespanYears}`} />
         <Stat label="Linh thạch" value={p.spiritStones} />

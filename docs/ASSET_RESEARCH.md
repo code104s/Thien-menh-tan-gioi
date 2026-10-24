@@ -137,6 +137,8 @@ Nhận xét:
 ### 7.3 Thiết kế màn hình (đề xuất, dựa trên view model hiện có)
 Nguyên tắc ở `10_UI_WIREFRAME.md` vẫn giữ: chữ rõ hơn đồ họa, mọi số liệu lấy từ view model. Trang trí là lớp phủ có thể tắt.
 
+*Trạng thái W7 (2026-10-24):* đã làm **Tu luyện** (trận pháp ở tab Bản thân), khung trang trí cho **World Map**, hộp thoại và màn khởi đầu. Chưa làm các màn mới: **Công pháp** (cần `TechniqueView`), hộp thoại **Đột phá** riêng, chân dung **Nhân vật**, bản đồ thu nhỏ trong tab **Tông môn**. Mỗi màn này là thay đổi view model/UI mới, cần duyệt phạm vi trước. Phông tiêu đề dùng phông hệ thống có dấu tiếng Việt (`Noto Serif`, `Times New Roman`); chưa tự host phông.
+
 | Màn | Bố cục | Dữ liệu (`packages/shared/src/view.ts`) | Họa tiết |
 |---|---|---|---|
 | **Tu luyện** | Trận pháp ở giữa: vòng ngoài là tiến độ tầng (`progressPct`), vòng trong là 4 tiểu cảnh. Hai bên là chỉ số. Dưới cùng là hành động đang chạy | `PlayerView.realmName/stageName/progressPct`, `currentAction.daysLeft/totalDays`, `LocationView.energyPct` | Bát quái xoay chậm khi đang tu luyện. Vòng mờ đi khi bị thương (`injury`) |

@@ -40,6 +40,18 @@ interface UiState {
   terrain: TerrainModel | null;
   /** Lý do không có địa hình (UI rơi về sơ đồ cũ); null khi có địa hình hoặc chưa nhận. */
   terrainUnavailable: string | null;
+  /** W7: bật giao diện trang trí "Ngọc Các" (khung, trận pháp); lưu theo trình duyệt, không ảnh hưởng mô phỏng. */
+  ornate: boolean;
+}
+
+const ORNATE_KEY = 'tmtg:ornate';
+
+function readOrnate(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(ORNATE_KEY) !== 'off';
+  } catch {
+    return true;
+  }
 }
 
 const TERRAIN_UNAVAILABLE_TEXT = {
@@ -71,6 +83,7 @@ export const useUi = create<UiState>(() => ({
   error: null,
   terrain: null,
   terrainUnavailable: null,
+  ornate: readOrnate(),
 }));
 
 const set = useUi.setState;
@@ -173,6 +186,14 @@ export const actions = {
   },
   pause() {
     send({ type: 'PAUSE' });
+  },
+  setOrnate(value: boolean) {
+    set({ ornate: value });
+    try {
+      globalThis.localStorage?.setItem(ORNATE_KEY, value ? 'on' : 'off');
+    } catch {
+      // Chế độ riêng tư / chặn lưu trữ: chỉ áp dụng trong phiên này.
+    }
   },
   setStopOnImportant(value: boolean) {
     set({ stopOnImportant: value });

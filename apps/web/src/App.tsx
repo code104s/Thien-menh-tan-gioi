@@ -7,6 +7,12 @@ import { StartScreen } from './components/StartScreen.tsx';
 export function App() {
   const screen = useUi((s) => s.screen);
   const error = useUi((s) => s.error);
+  const ornate = useUi((s) => s.ornate);
+
+  // W7: bật/tắt lớp trang trí "Ngọc Các" bằng thuộc tính trên <html> (CSS đổi token màu, khung, phông tiêu đề).
+  useEffect(() => {
+    document.documentElement.dataset['ornate'] = ornate ? 'on' : 'off';
+  }, [ornate]);
 
   // Tự lưu khi tab bị ẩn (ADR-15). Chỉ là thao tác giao diện, không ảnh hưởng mô phỏng.
   useEffect(() => {

@@ -9,7 +9,7 @@ import type {
 import {
   ACTION_TEXT, DAYS_PER_MONTH, DAYS_PER_YEAR, STAGE_TEXT, STRATEGY_TEXT, ageInYears, breakthroughBlocker,
   breakthroughChanceBp, breakthroughTarget, divCeil, formatDate, livingMembersOf, previewAction, realmName,
-  runningActionOf, sortedValues, stageThresholdFx, territoryOf,
+  runningActionOf, sortedValues, STAGES, stageThresholdFx, territoryOf,
   type ActionType, type Cultivator, type PlayerCommandPayload, type SimContext, type WorldState,
 } from '@tmtg/simulation';
 
@@ -141,6 +141,7 @@ function playerView(state: WorldState, ctx: SimContext, p: Cultivator): PlayerVi
     alive: p.alive,
     realmName: realmName(data, p.realm),
     stageName: STAGE_TEXT[p.stage]!,
+    stageIndex: STAGES.indexOf(p.stage),
     progressPct: Math.floor((p.progress * 100) / threshold),
     ageYears: ageInYears(p.birthDay, state.day),
     lifespanYears: Math.floor(p.lifespanDays / DAYS_PER_YEAR),

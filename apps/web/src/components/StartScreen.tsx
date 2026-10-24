@@ -2,6 +2,7 @@ import { generateWorld, sortedValues } from '@tmtg/simulation';
 import { useEffect, useMemo, useState } from 'react';
 import { actions, useUi } from '../app/store.ts';
 import { SavesDialog } from './Dialogs.tsx';
+import { Seal } from './ornaments/Seal.tsx';
 
 type OriginKey = 'join:0' | 'join:1' | 'join:2' | 'rogue' | 'seeker';
 
@@ -16,6 +17,7 @@ export function StartScreen() {
   const [origin, setOrigin] = useState<OriginKey>('join:0');
   const savesOpen = useUi((s) => s.savesOpen);
   const saves = useUi((s) => s.saves);
+  const ornate = useUi((s) => s.ornate);
 
   useEffect(() => { void actions.refreshSaves(); }, []);
 
@@ -44,7 +46,7 @@ export function StartScreen() {
 
   return (
     <main className="start">
-      <h1 className="title">Thiên Mệnh Tàn Giới</h1>
+      <h1 className="title">{ornate && <Seal />}Thiên Mệnh Tàn Giới</h1>
       <p className="subtitle">Thiên Khuyết làm thiên địa tổn thương, linh mạch suy kiệt. Thế giới tự vận hành — bạn chỉ là một tu sĩ nhỏ bé.</p>
       <form className="card start-form" onSubmit={(e) => { e.preventDefault(); start(); }}>
         <label className="field">

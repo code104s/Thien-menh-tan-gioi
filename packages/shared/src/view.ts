@@ -34,6 +34,8 @@ export interface PlayerView {
   alive: boolean;
   realmName: string;
   stageName: string;
+  /** 0..3: sơ kỳ, trung kỳ, hậu kỳ, viên mãn (vòng tiểu cảnh của trận pháp tu luyện). */
+  stageIndex: number;
   /** 0..100 */
   progressPct: number;
   ageYears: number;
