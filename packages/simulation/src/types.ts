@@ -76,9 +76,13 @@ export interface Ledger {
 }
 
 export interface WorldState {
-  schemaVersion: 1;
+  schemaVersion: 2;
   contentVersion: string;
   seed: string;
+  /** ADR-16: phiên bản generator địa hình đã sinh thế giới này; 0 = save cũ (v1) không có địa hình. */
+  terrainGenVersion: number;
+  /** Digest TerrainModel lúc sinh; null khi terrainGenVersion = 0. */
+  terrainDigest: string | null;
   day: Day;
   playerId: EntityId;
   gameOver: { day: Day; cause: DeathCause; eventId: EntityId } | null;
@@ -118,6 +122,10 @@ export interface Location {
   veinId: EntityId | null;
   ownerFactionId: EntityId | null;
   daoMarkIds: EntityId[];
+  /** ADR-16: id biome của ô neo; null = save cũ không có địa hình. */
+  biomeId: string | null;
+  /** ADR-16: chỉ số ô neo trong TerrainModel; null = save cũ không có địa hình. */
+  anchorCell: number | null;
 }
 
 export interface SpiritVein {

@@ -50,7 +50,7 @@ Nguồn sự thật cho kiểu là `packages/simulation/src/types.ts`; schema Zo
 - **Interrupt** chỉ dựa trên event người chơi đã biết trong tick (`processNews` trả `playerKnown`), cộng action của người chơi, lựa chọn mới và cái chết của người chơi.
 
 ## Bổ sung ADR-16 — địa hình (W0, 2026-10-24, schema v2)
-Đã duyệt. **W1–W4 đã triển khai** (đồ thị địa điểm suy ra từ địa hình). **Chưa triển khai (W5):** T1, T2 (`schemaVersion 2`, `terrainGenVersion`, `terrainDigest`, `biomeId`, `anchorCell`), migration, I12–I14. **W6:** T5. Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
+Đã duyệt. **W1–W5 đã triển khai**: đồ thị suy ra từ địa hình; T1, T2 (`schemaVersion 2`, `terrainGenVersion`, `terrainDigest`, `biomeId`, `anchorCell`), migration v1 → v2, I12–I14. **Chưa triển khai (W6):** T5 (protocol `TERRAIN`). Các khối kiểu bên dưới đã được cập nhật theo v2, đánh dấu `// v2`.
 
 #### Ghi chú triển khai W4 (2026-10-23)
 - **Hàm:** `generateTerrainWorld(seed, data): { model, grid, sites, edges }` (`worldgen/terrain/index.ts`). `sites[k]` là ô neo của `loc_(k+1)`, sắp tăng theo chỉ số ô. `generateTerrain(seed, data)` trả riêng `model` đúng chữ ký hợp đồng. `TERRAIN_GEN_VERSION = 1`.
@@ -164,7 +164,7 @@ Giữ nguyên: `locationCount`, `extraEdges`, `veinCount`, `minSeatDistance`, c�
 ```ts
 // WorkerToUi, gửi ngay sau READY (khởi tạo hoặc LOAD) khi terrainGenVersion > 0
 | { type: 'TERRAIN'; status: 'ok'; terrain: TerrainModel }
-| { type: 'TERRAIN'; status: 'unavailable'; reason: 'legacy_save' | 'digest_mismatch' }
+| { type: 'TERRAIN'; status: 'unavailable'; reason: 'legacy_save' | 'unsupported_version' | 'digest_mismatch' }
 ```
 `unavailable` → UI dùng bố cục lực đẩy-kéo (`layout.ts`) và hiện cảnh báo nhỏ. Simulation không bị ảnh hưởng.
 View model: `LocationView` thêm `biomeName: string | null` và `anchorCell: number | null`.
@@ -458,7 +458,13 @@ Quy tắc: `seq ≤ lastCommandSeq` → bỏ qua, không lỗi (idempotent). L�
 10. `gameOver ≠ null` ⇔ người chơi `alive = false`.
 11. `eventSeq = counters.event`, `action.seq ≤ counters.action` (bổ sung Phase 1).
 
-Bất biến v2 (ADR-16). Chỉ áp dụng khi `terrainGenVersion > 0`. Kiểm tra cần `TerrainModel`, nên chạy trong test worldgen và khi tải save, **không** chạy mỗi tick:
+Bất biến v2 (ADR-16). Chỉ áp dụng khi `terrainGenVersion > 0`. Kiểm tra cần `TerrainModel`, nên chạy trong test worldgen và khi tải save, **không** chạy mỗi tick.
+
+*Triển khai W5 (2026-10-24):*
+- `checkInvariants` (mỗi tick kiểm tra được) chỉ làm phần **cấu trúc rẻ**: `terrainGenVersion = 0` ⇔ `terrainDigest` và mọi `biomeId`/`anchorCell` là `null`; khi > 0 thì `biomeId` tồn tại trong `biomes`, `anchorCell` trong lưới và không trùng, `travelDays` trong khoảng kẹp (phần đầu của 14).
+- `regenerateTerrain(state, data)` → `{ status: 'ok', model }` hoặc `{ status: 'unavailable', reason: 'legacy_save' | 'unsupported_version' | 'digest_mismatch' }`. Không đổi state.
+- `checkTerrainInvariants(state, model, data)` làm phần cần `TerrainModel`. `parseSnapshot` gọi nó **chỉ khi** `regenerateTerrain` trả `ok`: vi phạm → "Save hỏng"; `unavailable` → vẫn tải được (UI rơi về bản đồ cũ, ADR-16).
+- Diễn giải 14 (linh mạch tự do): so với mọi nút **không phải trụ sở** và không có linh mạch, kể cả thị trấn/bí cảnh (lúc chọn linh mạch chúng vẫn là `wild`). Ngoại lệ "bị loại vì `minVeinSpacing`" kiểm bằng khoảng cách tới **bất kỳ** linh mạch nào (rộng hơn một chút so với lúc sinh, không báo sai). Linh mạch tranh chấp tính lại bằng `contestedVeinLocation` từ đồ thị và trụ sở (đều không đổi sau worldgen).
 
 12. `generateTerrain(seed).digest = terrainDigest`, và mọi `anchorCell` là ô đất (`travelCost > 0`), không có tag `forbidden`, và `cellLocation[anchorCell]` trỏ đúng địa điểm đó.
 13. Mọi `anchorCell` nằm trên cùng một khối đất liên thông. `Location.biomeId = biomes[biome[anchorCell]].id`.

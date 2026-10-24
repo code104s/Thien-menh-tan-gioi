@@ -5,10 +5,21 @@
 import { canonicalJson } from './digest.ts';
 import type { WorldState } from '../types.ts';
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
-/** MIGRATIONS[v] nâng snapshot từ phiên bản v lên v + 1. Hiện chưa có (v1 là bản đầu). */
-export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {};
+/** MIGRATIONS[v] nâng snapshot từ phiên bản v lên v + 1. */
+export const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  /** v1 → v2 (ADR-16): save cũ không có địa hình → terrainGenVersion 0, các trường địa hình null. */
+  1: (raw) => {
+    const locations = raw['locations'];
+    if (locations !== null && typeof locations === 'object' && !Array.isArray(locations)) {
+      for (const l of Object.values(locations as Record<string, unknown>)) {
+        if (l !== null && typeof l === 'object') Object.assign(l, { biomeId: null, anchorCell: null });
+      }
+    }
+    return { ...raw, terrainGenVersion: 0, terrainDigest: null };
+  },
+};
 
 export class SnapshotError extends Error {
   override name = 'SnapshotError';

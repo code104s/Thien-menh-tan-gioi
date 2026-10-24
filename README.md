@@ -18,7 +18,7 @@ Phiên bản 0.2 | Nền tảng: web game chơi đơn | Ngôn ngữ tài liệu,
 12. `docs/10_UI_WIREFRAME.md` — wireframe giao diện
 13. `docs/11_TASK_BREAKDOWN.md` — task Phase 1–5, package, benchmark
 
-### Bản đồ thế giới (ADR-16, đã duyệt 2026-10-24; W1–W4 đã triển khai, W5–W7 chưa)
+### Bản đồ thế giới (ADR-16, đã duyệt 2026-10-24; W1–W5 đã triển khai, W6–W7 chưa)
 14. `docs/ASSET_RESEARCH.md` — khảo sát mapgen4, FMG, Labyrinthos, tilemap-lab và asset UI
 15. `docs/WORLD_MAP_TECH_PLAN.md` — kiến trúc địa hình hex số nguyên, task W0–W7
 

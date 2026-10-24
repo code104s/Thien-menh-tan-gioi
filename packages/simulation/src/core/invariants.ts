@@ -2,12 +2,18 @@
 import { gameData as defaultGameData, type GameData } from '@tmtg/game-data';
 import { stageThresholdFx } from '../rules/realm.ts';
 import { isConnected } from '../world/graph.ts';
-import { stoneSupply } from '../worldgen/generate.ts';
-import { BURN_SINKS, REALMS, STAGES, type WorldState } from '../types.ts';
+import { contestedVeinLocation, stoneSupply } from '../worldgen/generate.ts';
+import { biomeHasTag } from '../worldgen/terrain/biome.ts';
+import { createHexGrid, hexDistance } from '../worldgen/terrain/hexGrid.ts';
+import { TERRAIN_GEN_VERSION, generateTerrain, type TerrainModel } from '../worldgen/terrain/index.ts';
+import { largestLandMass } from '../worldgen/terrain/sites.ts';
+import { BURN_SINKS, REALMS, STAGES, type EntityId, type WorldState } from '../types.ts';
+import { sortedKeys } from './ids.ts';
 
 export type InvariantCode =
   | 'I1_REFERENCE' | 'I2_NUMBER' | 'I3_ACTIONS' | 'I4_LEADER' | 'I5_VEIN' | 'I6_DISPUTE'
-  | 'I7_GRAPH' | 'I8_STONES' | 'I9_REALM' | 'I10_GAME_OVER' | 'I11_COUNTERS';
+  | 'I7_GRAPH' | 'I8_STONES' | 'I9_REALM' | 'I10_GAME_OVER' | 'I11_COUNTERS'
+  | 'I12_TERRAIN' | 'I13_TERRAIN' | 'I14_TERRAIN';
 
 export interface InvariantViolation {
   code: InvariantCode;
@@ -169,6 +175,96 @@ export function checkInvariants(state: WorldState, data: GameData = defaultGameD
     if (a.seq > state.counters.action) fail('I11_COUNTERS', `${a.id}.seq vượt counters.action`);
   }
 
+  // I12/I14 (phần cấu trúc, rẻ) — trường địa hình nhất quán với terrainGenVersion (ADR-16).
+  // Phần cần sinh lại địa hình nằm ở checkTerrainInvariants, không chạy mỗi tick.
+  const terrainParams = data.balance.worldgen.terrain;
+  const cellCount = terrainParams.width * terrainParams.height;
+  if (state.terrainGenVersion === 0) {
+    if (state.terrainDigest !== null) fail('I12_TERRAIN', 'Save không địa hình nhưng có terrainDigest');
+    for (const l of Object.values(locations)) {
+      if (l.biomeId !== null || l.anchorCell !== null) fail('I12_TERRAIN', `${l.id} có trường địa hình trong save không địa hình`);
+    }
+  } else {
+    if (state.terrainDigest === null) fail('I12_TERRAIN', 'Thiếu terrainDigest');
+    const anchors = new Set<number>();
+    const [minDays, maxDays] = data.balance.worldgen.travelDays;
+    for (const l of Object.values(locations)) {
+      if (l.biomeId === null || !data.biomes.some((b) => b.id === l.biomeId)) fail('I12_TERRAIN', `${l.id}.biomeId không hợp lệ`);
+      if (l.anchorCell === null || l.anchorCell >= cellCount) fail('I12_TERRAIN', `${l.id}.anchorCell ngoài lưới`);
+      else if (anchors.has(l.anchorCell)) fail('I12_TERRAIN', `${l.id} trùng ô neo ${l.anchorCell}`);
+      else anchors.add(l.anchorCell);
+      for (const e of l.edges) {
+        if (e.travelDays < minDays || e.travelDays > maxDays) fail('I14_TERRAIN', `Cạnh ${l.id}→${e.to} travelDays ${e.travelDays} ngoài khoảng`);
+      }
+    }
+  }
+
+  return out;
+}
+
+export type TerrainStatus =
+  | { status: 'ok'; model: TerrainModel }
+  | { status: 'unavailable'; reason: 'legacy_save' | 'unsupported_version' | 'digest_mismatch' };
+
+/**
+ * Sinh lại địa hình của một thế giới để hiển thị/kiểm tra (ADR-16). Không đổi state.
+ * `unavailable` không phải lỗi save: mô phỏng không phụ thuộc địa hình sau worldgen, UI dùng bản đồ cũ.
+ */
+export function regenerateTerrain(state: WorldState, data: GameData = defaultGameData): TerrainStatus {
+  if (state.terrainGenVersion === 0) return { status: 'unavailable', reason: 'legacy_save' };
+  if (state.terrainGenVersion !== TERRAIN_GEN_VERSION) return { status: 'unavailable', reason: 'unsupported_version' };
+  const model = generateTerrain(state.seed, data);
+  if (model.digest !== state.terrainDigest) return { status: 'unavailable', reason: 'digest_mismatch' };
+  return { status: 'ok', model };
+}
+
+/**
+ * I12–I14 phần cần TerrainModel (docs/08). `model` phải là kết quả `regenerateTerrain` với status 'ok'.
+ * Chạy trong test worldgen và khi tải save, không chạy mỗi tick.
+ */
+export function checkTerrainInvariants(state: WorldState, model: TerrainModel, data: GameData = defaultGameData): InvariantViolation[] {
+  const out: InvariantViolation[] = [];
+  const fail = (code: InvariantCode, message: string) => out.push({ code, message });
+  if (model.digest !== state.terrainDigest || model.terrainGenVersion !== state.terrainGenVersion) {
+    return [{ code: 'I12_TERRAIN', message: 'TerrainModel không khớp terrainDigest/terrainGenVersion của state' }];
+  }
+  const grid = createHexGrid(model.width, model.height);
+  const mass = largestLandMass(grid, model.biome, data);
+  const ids = sortedKeys(state.locations);
+  const anchorOf = new Map<EntityId, number>();
+  ids.forEach((id, k) => {
+    const l = state.locations[id]!;
+    const cell = l.anchorCell;
+    if (cell === null) return; // đã báo ở checkInvariants
+    anchorOf.set(id, cell);
+    const biome = data.biomes[model.biome[cell]!];
+    // I12 — ô neo là đất đi được, không phải vùng cấm, thuộc đúng vùng của địa điểm.
+    if (!biome || biome.travelCost <= 0) fail('I12_TERRAIN', `${id} đặt trên ô không đi được`);
+    if (biomeHasTag(data, model.biome[cell]!, 'forbidden')) fail('I12_TERRAIN', `${id} đặt trên vùng cấm`);
+    if (model.cellLocation[cell] !== k) fail('I12_TERRAIN', `cellLocation tại ô neo của ${id} = ${model.cellLocation[cell]}, cần ${k}`);
+    // I13 — cùng khối đất chính, biomeId khớp ô neo.
+    if (!mass[cell]) fail('I13_TERRAIN', `${id} nằm ngoài khối đất chính`);
+    if (biome && l.biomeId !== biome.id) fail('I13_TERRAIN', `${id}.biomeId ${l.biomeId} ≠ ${biome.id}`);
+  });
+
+  // I14 — linh mạch "tự do" (không ở trụ sở, không phải linh mạch tranh chấp) có địa khí ≥ mọi nút không trụ sở,
+  // không linh mạch, trừ nút bị loại vì nằm trong minVeinSpacing của một linh mạch.
+  const seats = sortedKeys(state.factions).map((f) => state.factions[f]!.seatLocationId);
+  if (seats.length >= 2) {
+    const contested = contestedVeinLocation(state.locations, seats);
+    const qiOf = (id: EntityId) => model.qi[anchorOf.get(id) ?? -1] ?? -1;
+    const veinSites = ids.filter((id) => state.locations[id]!.veinId !== null);
+    const spacing = data.balance.worldgen.terrain.minVeinSpacing;
+    const nearVein = (id: EntityId) => veinSites.some((v) =>
+      anchorOf.has(v) && anchorOf.has(id) && hexDistance(grid, anchorOf.get(v)!, anchorOf.get(id)!) < spacing);
+    const free = veinSites.filter((id) => !seats.includes(id) && id !== contested);
+    const veinless = ids.filter((id) => !seats.includes(id) && state.locations[id]!.veinId === null && !nearVein(id));
+    for (const v of free) {
+      for (const l of veinless) {
+        if (qiOf(v) < qiOf(l)) fail('I14_TERRAIN', `Linh mạch tại ${v} (qi ${qiOf(v)}) yếu hơn nút trống ${l} (qi ${qiOf(l)})`);
+      }
+    }
+  }
   return out;
 }
 

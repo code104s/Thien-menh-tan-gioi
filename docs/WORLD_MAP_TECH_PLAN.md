@@ -1,6 +1,6 @@
 # WORLD_MAP_TECH_PLAN — Kế hoạch kỹ thuật bản đồ thế giới
 
-Phiên bản 0.2 · 2026-10-24 · Trạng thái: **kiến trúc §2 đã duyệt** (ADR-16). W0–W4 xong (2026-10-23): đồ thị địa điểm suy ra từ địa hình; schema v2, protocol `TERRAIN` và renderer chưa làm (W5–W7). Khi tài liệu này mâu thuẫn với 07/08, ưu tiên 07/08.
+Phiên bản 0.2 · 2026-10-24 · Trạng thái: **kiến trúc §2 đã duyệt** (ADR-16). W0–W5 xong (2026-10-24): đồ thị địa điểm suy ra từ địa hình, schema v2 + migration + bất biến I12–I14; protocol `TERRAIN` và renderer chưa làm (W6–W7). Khi tài liệu này mâu thuẫn với 07/08, ưu tiên 07/08.
 Dữ liệu nền: `ASSET_RESEARCH.md`. Theo `CLAUDE.md`, mọi thay đổi kiến trúc và cân bằng nền tảng cần được duyệt trước.
 
 ## 1. Hiện trạng và ràng buộc
@@ -144,7 +144,7 @@ Bất biến mới (bổ sung vào `checkInvariants` khi có `TerrainModel`): m�
 | W2 ✅ | Độ cao + long mạch + priority-flood + sông + độ ẩm (2026-10-24; 100 seed: đất 62–66 %, khối đất lớn nhất ≥ 97,8 %, 93–217 ô sông, ~1,6 ms/seed) | W1 | M | `elevation.ts`, `hydrology.ts`, `climate.ts` | 100 seed: không còn trũng nội địa sau khi lấp; mọi ô đất chảy được ra biển; tỉ lệ đất 55–75 %; có ≥ 1 sông |
 | W3 ✅ | Biome + `biomes.json` + `qi` (2026-10-24; 100 seed: núi 22 % đất, vùng cấm 0,3–13 % và có ở mọi seed; top-30 qi ≈ 66 % núi / 62 % sông; ~2,7 ms/seed cho W2+W3) | W2 | S | `biome.ts`, `qi.ts`, `game-data/data/biomes.json` | Zod validate; mọi ô có biome hợp lệ |
 | W4 ✅ | Địa điểm + vùng + đồ thị + nối vào `generateWorld` (2026-10-23; 100 seed: không seed nào phải nới khoảng cách, `travelDays` trung bình 8,5, 17 cạnh/seed, ~10 ms/seed cho toàn pipeline; tranh chấp trong 10 năm: 103/200 seed so với 104/200 của đồ thị cũ, **chưa đạt 8/10**, xem §9. Đo lại sau review (2026-10-24): 10 seed nghiệm thu `bench-000…009` 6/10 so với 5/10 của main trong 10 năm, 8/10 so với 6/10 trong 50 năm; 50 seed 25/50 so với 31/50) | W3 | L | `sites.ts`, `regions.ts`, `graph.ts`, `index.ts`, `types.ts`, `generate.ts` | 100 seed: đúng 14 địa điểm, đồ thị liên thông, `travelDays` ∈ [3,15], 5 linh mạch, ≥ 8/10 seed có tranh chấp trong 10 năm (giữ nghiệm thu 3.4) |
-| W5 | Schema v2 + migration + bất biến mới + baseline bench mới | W4 | M | `shared/src/schema.ts`, `save.ts`, `core/invariants.ts`, `bench-results/` | Save v1 vẫn tải được; round-trip v2 giữ digest; `pnpm sim bench` không chậm quá 5 % |
+| W5 ✅ | Schema v2 + migration + bất biến mới + baseline bench mới (2026-10-24; bench 10 seed × 100 năm: 38 316 tick/giây so với 37 642 của Phase 3, snapshot 69 797 so với 68 683 byte; baseline ở `bench-results/w5-terrain.json`, thư mục này bị `.gitignore` loại) | W4 | M | `shared/src/schema.ts`, `save.ts`, `core/invariants.ts`, `bench-results/` | Save v1 vẫn tải được; round-trip v2 giữ digest; `pnpm sim bench` không chậm quá 5 % |
 | W6 | Protocol `TERRAIN` + `TerrainRenderer` + hit-test + bỏ `layout.ts` | W4 | L | `worker/sim.worker.ts`, `shared/src/protocol.ts`, `components/map/*` | Bake nền ≤ 30 ms, khung ≤ 4 ms (route `/bench`); bấm địa điểm chọn đúng; lãnh thổ đổi màu sau khi chuyển quyền |
 | W7 | (UI, có thể làm song song W6) Token màu "Ngọc Các", SVG trận pháp, khung `border-image` cho các màn trong `ASSET_RESEARCH §7.3` | W0 | M | `apps/web/src/styles.css`, `components/ornaments/*` | Tắt được trang trí; `prefers-reduced-motion`; độ tương phản chữ đạt WCAG AA |
 

@@ -35,6 +35,8 @@ export const locationSchema = z.object({
   veinId: id.nullable(),
   ownerFactionId: id.nullable(),
   daoMarkIds: z.array(id),
+  biomeId: z.string().regex(/^[a-z_]+$/).nullable(),
+  anchorCell: nonNeg.nullable(),
 });
 
 export const spiritVeinSchema = z.object({
@@ -182,9 +184,11 @@ export const playerCommandSchema = z.object({
 });
 
 export const worldStateSchema = z.object({
-  schemaVersion: z.literal(1),
+  schemaVersion: z.literal(2),
   contentVersion: z.string().min(1),
   seed: z.string().min(1),
+  terrainGenVersion: nonNeg,
+  terrainDigest: z.string().regex(/^[0-9a-f]{16}$/).nullable(),
   day: nonNeg,
   playerId: id,
   gameOver: z.object({ day: int, cause: z.enum(DEATH_CAUSES), eventId: id }).nullable(),

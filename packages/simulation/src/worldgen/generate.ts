@@ -55,9 +55,11 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
   const data = params.data ?? defaultGameData;
   const cfg = data.balance.worldgen;
   const state: WorldState = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     contentVersion: data.contentVersion,
     seed: params.seed,
+    terrainGenVersion: 0,
+    terrainDigest: null,
     day: 0,
     playerId: PLAYER_ID,
     gameOver: null,
@@ -81,6 +83,8 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
 
   // 1. Địa hình (ADR-16): địa điểm, cạnh và travelDays suy ra từ lưới hex; luồng RNG địa hình là cục bộ.
   const terrain = generateTerrainWorld(params.seed, data);
+  state.terrainGenVersion = terrain.model.terrainGenVersion;
+  state.terrainDigest = terrain.model.digest;
   const { biome: cellBiome, qi } = terrain.model;
   const { grid } = terrain;
   const n = terrain.sites.length;
@@ -108,6 +112,8 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
       veinId: null,
       ownerFactionId: null,
       daoMarkIds: [],
+      biomeId: biomeAt(id).id,
+      anchorCell: anchor(id),
     };
   }
   const loc = (id: EntityId): Location => state.locations[id]!;
@@ -165,11 +171,7 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
   }
 
   // 4. Linh mạch tranh chấp: nút không phải trụ sở gần trụ sở tông 0 nhất (hòa → gần tông 1), thuộc tông 1.
-  const distFrom0 = hopDistances(state.locations, seats[0]!);
-  const distFrom1 = hopDistances(state.locations, seats[1]!);
-  const contestedId = locIds
-    .filter((id) => !seats.includes(id))
-    .sort((a, b) => distFrom0.get(a)! - distFrom0.get(b)! || distFrom1.get(a)! - distFrom1.get(b)! || compareIds(a, b))[0]!;
+  const contestedId = contestedVeinLocation(state.locations, seats);
   loc(contestedId).ownerFactionId = facIds[1]!;
   const veinLocations: EntityId[] = [contestedId];
   veinLocations.push(...seats);
@@ -333,6 +335,18 @@ export function generateWorld(params: WorldGenParams): GeneratedWorld {
     }),
   ];
   return { state, events };
+}
+
+/**
+ * Địa điểm của linh mạch tranh chấp (09 §9): nút không phải trụ sở gần trụ sở tông thứ nhất nhất,
+ * hòa → gần trụ sở tông thứ hai hơn, hòa → id. Chỉ phụ thuộc đồ thị và trụ sở (đều không đổi sau worldgen).
+ */
+export function contestedVeinLocation(locations: Record<EntityId, Location>, seats: readonly EntityId[]): EntityId {
+  const distFrom0 = hopDistances(locations, seats[0]!);
+  const distFrom1 = hopDistances(locations, seats[1]!);
+  return sortedKeys(locations)
+    .filter((id) => !seats.includes(id))
+    .sort((a, b) => distFrom0.get(a)! - distFrom0.get(b)! || distFrom1.get(a)! - distFrom1.get(b)! || compareIds(a, b))[0]!;
 }
 
 /** Σ ví + kho + giữ chỗ + trữ lượng linh mạch + tài nguyên địa điểm. */
